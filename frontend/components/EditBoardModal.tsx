@@ -18,6 +18,7 @@ export function EditBoardModal({ board, isOpen, onClose, onUpdate }: EditBoardMo
   // Sync state when board changes (intentional sync from props to state)
   useEffect(() => {
     if (board) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(board.name);
       setDescription(board.description || '');
     }

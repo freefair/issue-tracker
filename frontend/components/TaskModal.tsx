@@ -27,6 +27,7 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
   // Update internal state when task ID changes (new task selected)
   // This is an intentional sync from props to state
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTitle(task.title);
     setDescription(task.description);
     setTags(task.tags);
