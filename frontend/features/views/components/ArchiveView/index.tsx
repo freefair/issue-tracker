@@ -85,7 +85,20 @@ export function ArchiveView({ tasks, onTaskClick, onRestoreTask, renderTask }: A
                     data-archived="true"
                     data-testid="task-card"
                   >
-                    <div onClick={() => onTaskClick(task)}>{renderTask(task)}</div>
+                    <div
+                      onClick={() => onTaskClick(task)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onTaskClick(task);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`View task: ${task.title}`}
+                    >
+                      {renderTask(task)}
+                    </div>
 
                     <button
                       onClick={() => onRestoreTask(task)}

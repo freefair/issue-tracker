@@ -85,6 +85,15 @@ export function BacklogView({
               <div
                 className="flex items-center justify-between mb-4 cursor-pointer"
                 onClick={() => onCategoryClick(category)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onCategoryClick(category);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label={`View category: ${category.name}`}
               >
                 <h3 className="text-lg font-semibold">{category.name}</h3>
                 <span className="text-sm text-gray-500">{categoryTasks.length}</span>
@@ -92,7 +101,19 @@ export function BacklogView({
 
               <div className="space-y-2">
                 {categoryTasks.map(task => (
-                  <div key={task.id} onClick={() => onTaskClick(task)}>
+                  <div
+                    key={task.id}
+                    onClick={() => onTaskClick(task)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onTaskClick(task);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View task: ${task.title}`}
+                  >
                     {renderTask(task)}
                   </div>
                 ))}

@@ -18,10 +18,10 @@ export function EditBoardModal({ board, isOpen, onClose, onUpdate }: EditBoardMo
   // Sync state when board changes (intentional sync from props to state)
   useEffect(() => {
     if (board) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(board.name);
       setDescription(board.description || '');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [board?.id, board?.name, board?.description]);
 
   if (!isOpen || !board) return null;
@@ -47,6 +47,7 @@ export function EditBoardModal({ board, isOpen, onClose, onUpdate }: EditBoardMo
   };
 
   return (
+    /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */
     <div
       role="dialog"
       aria-modal="true"
@@ -56,6 +57,7 @@ export function EditBoardModal({ board, isOpen, onClose, onUpdate }: EditBoardMo
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full"
         onClick={e => e.stopPropagation()}

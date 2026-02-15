@@ -25,7 +25,19 @@ export function UncategorizedSection({
 
       <div className="space-y-2">
         {tasks.map(task => (
-          <div key={task.id} onClick={() => onTaskClick(task)}>
+          <div
+            key={task.id}
+            onClick={() => onTaskClick(task)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onTaskClick(task);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label={`View task: ${task.title}`}
+          >
             {renderTask(task)}
           </div>
         ))}

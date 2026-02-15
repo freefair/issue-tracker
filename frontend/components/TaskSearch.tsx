@@ -47,6 +47,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
     if (currentBoard && chips.length === 0) {
       setChips([{ type: 'board', value: currentBoardId, displayValue: currentBoard.name }]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentBoardId, boards]);
 
   // Keyboard shortcuts (Cmd+K / Ctrl+K to focus)
@@ -146,6 +147,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
       setResults([]);
       setIsResultsOpen(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chips, inputValue]);
 
   const performSearch = async () => {

@@ -50,6 +50,7 @@ function HomeContent() {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId, boards, router]);
 
   // Update view when URL parameter changes

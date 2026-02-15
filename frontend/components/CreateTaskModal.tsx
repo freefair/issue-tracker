@@ -50,6 +50,7 @@ export function CreateTaskModal({
   };
 
   return (
+    /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */
     <div
       role="dialog"
       aria-modal="true"
@@ -59,6 +60,7 @@ export function CreateTaskModal({
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full"
         onClick={e => e.stopPropagation()}

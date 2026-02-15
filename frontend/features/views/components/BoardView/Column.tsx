@@ -47,7 +47,19 @@ export function Column({
       <div className="flex-1 overflow-y-auto p-4 space-y-2">
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
           {tasks.map(task => (
-            <div key={task.id} onClick={() => onTaskClick(task)}>
+            <div
+              key={task.id}
+              onClick={() => onTaskClick(task)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onTaskClick(task);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`View task: ${task.title}`}
+            >
               {renderTask(task)}
             </div>
           ))}

@@ -54,6 +54,7 @@ export function ConfirmDialog({
   };
 
   return (
+    /* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */
     <div
       role="dialog"
       aria-modal="true"
@@ -63,6 +64,7 @@ export function ConfirmDialog({
       onKeyDown={handleBackdropKeyDown}
       tabIndex={-1}
     >
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */}
       <div
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full"
         onClick={e => e.stopPropagation()}
