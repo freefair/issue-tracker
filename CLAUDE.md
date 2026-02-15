@@ -190,3 +190,270 @@ Examples:
 - Don't commit TODO comments without tracking
 - Keep commits focused (one concern per commit)
 - Run tests before committing
+
+---
+
+# Project-Specific Information
+
+## Tech Stack
+
+### Backend
+- **Language:** Kotlin 1.9+
+- **Framework:** Spring Boot 3.x with WebFlux (reactive)
+- **Database:** H2 (development), R2DBC for reactive access
+- **Migrations:** Flyway
+- **Build:** Gradle with Kotlin DSL
+
+### Frontend
+- **Framework:** Next.js 16 (App Router)
+- **Runtime:** React 19
+- **Language:** TypeScript 5.9 (strict mode)
+- **Styling:** Tailwind CSS
+- **Drag & Drop:** @dnd-kit
+- **Build:** Static export served from backend
+
+## Project Structure
+
+```
+issue-tracker/
+├── backend/
+│   └── src/main/
+│       ├── kotlin/com/issuetracker/
+│       │   ├── domain/          # Entities (Persistable pattern)
+│       │   ├── dto/             # Request/Response DTOs
+│       │   ├── repository/      # R2DBC repositories
+│       │   ├── service/         # Business logic
+│       │   ├── web/             # Controllers (REST endpoints)
+│       │   └── exception/       # Custom exceptions
+│       └── resources/
+│           ├── db/migration/    # Flyway SQL migrations
+│           └── static/          # Deployed frontend (auto-generated)
+└── frontend/
+    ├── app/                     # Next.js App Router pages
+    ├── components/              # React components
+    ├── lib/                     # API client, utilities
+    ├── types/                   # TypeScript interfaces
+    └── out/                     # Build output (→ backend/static)
+```
+
+## Key Architecture Patterns
+
+### Backend: Spring Data R2DBC Persistable Pattern
+- **Problem:** R2DBC doesn't auto-generate UUIDs like JPA
+- **Solution:** Implement `Persistable<UUID>` interface
+- **Pattern:**
+  ```kotlin
+  @Table("table_name")
+  data class Entity(
+      @Id
+      private val id: UUID? = null,
+      // other fields
+  ) : Persistable<UUID> {
+      @Transient
+      private var new: Boolean = true
+
+      override fun getId(): UUID? = id
+      override fun isNew(): Boolean = new
+
+      fun withPersistedFlag(): Entity {
+          this.new = false
+          return this
+      }
+  }
+  ```
+- **Usage:** Call `.withPersistedFlag()` after loading from DB in service layer
+- **Reason:** Prevents UPDATE errors on existing entities
+
+### Frontend: Static Export with Backend Serving
+- Frontend builds to `out/` directory
+- Deployment script copies `out/` → `backend/src/main/resources/static/`
+- Backend serves frontend from `/static` (Spring Boot default)
+- **Single JAR deployment** with embedded frontend
+
+### URL State Management
+- Board selection: `?board={uuid}`
+- View selection: `?view=board|backlog|archive`
+- Both parameters required for full state restoration
+- Sidebar links preserve current view when switching boards
+
+### Task Search Architecture
+- **Component:** `TaskSearch.tsx` with query chip pattern
+- **Chips:** Board, Tag, Status become visual bubbles
+- **Autocomplete:** Field names and values
+- **Debounce:** 300ms to reduce API load
+- **Focus-aware:** Results only show when input focused
+- **Dual endpoints:**
+  - Board-scoped: `/api/tasks/search?boardId={id}&q={query}`
+  - Global: `/api/tasks/search/global?q={query}`
+
+## Database Schema Notes
+
+### Tables
+- `boards` - Board definitions
+- `tasks` - All tasks with foreign key to boards
+- `backlog_categories` - Custom backlog categories per board
+- `flyway_schema_history` - Migration tracking
+
+### Key Constraints
+- `tasks.board_id` → `boards.id` (CASCADE DELETE)
+- `tasks.backlog_category_id` → `backlog_categories.id` (SET NULL)
+- `backlog_categories.board_id` → `boards.id` (CASCADE DELETE)
+
+### Indexes
+- `idx_tasks_board_id` on `tasks(board_id)`
+- `idx_tasks_backlog_category_id` on `tasks(backlog_category_id)`
+- `idx_backlog_categories_board_id` on `backlog_categories(board_id)`
+
+## Common Development Tasks
+
+### Deploy & Restart
+```bash
+# Build and deploy frontend
+cd frontend && npm run deploy
+
+# Restart backend
+pkill -f "gradle.*bootRun"
+sleep 2
+cd /Users/dennisfricke/Projekte/TFSolution/issue-tracker
+./gradlew bootRun > /tmp/backend.log 2>&1 &
+
+# Verify backend
+sleep 8 && curl -s http://localhost:8080/api/boards | jq
+```
+
+### Add New Migration
+1. Create file: `backend/src/main/resources/db/migration/V{N}__{description}.sql`
+2. Use sequential version numbers (V1, V2, V3, ...)
+3. Flyway auto-applies on next backend start
+4. **Never modify existing migrations** - create new ones
+
+### Add New API Endpoint
+1. Define DTO in `dto/` package
+2. Add repository method (if needed)
+3. Add service method with business logic
+4. Add controller endpoint
+5. Update `openapi.json` specification
+6. Add frontend API method in `lib/api.ts`
+
+### Update Documentation
+- **FEATURES.md** - When adding/changing user-facing features
+- **openapi.json** - When adding/changing API endpoints
+- **CLAUDE.md** - When discovering important patterns or decisions
+- **Commit regularly** with clear messages
+
+## Important Gotchas
+
+### Backend
+- ⚠️ **Manual UUID generation required** - Use `UUID.randomUUID()` in service
+- ⚠️ **Call `.withPersistedFlag()`** after loading entities from DB
+- ⚠️ **Private `id` field** in entities to avoid JVM signature conflicts
+- ⚠️ **Mutable `new` flag** in Persistable entities (not `val`)
+- ⚠️ **Reactive Flows** - Use `.collect {}` not `.forEach {}`
+
+### Frontend
+- ⚠️ **'use client'** directive required for interactive components
+- ⚠️ **URL updates** must include both `board` and `view` parameters
+- ⚠️ **Search focus state** - Results only visible when focused
+- ⚠️ **Static export** - Dynamic routes need `generateStaticParams()`
+- ⚠️ **Debounce searches** to avoid excessive API calls
+
+### Deployment
+- ⚠️ **Order matters:** Build frontend BEFORE starting backend
+- ⚠️ **Kill backend first** before deploying new frontend
+- ⚠️ **Sleep between** kill and restart for clean shutdown
+- ⚠️ **Check logs** at `/tmp/backend.log` if backend doesn't start
+
+## Feature Flags / Configuration
+
+### Environment Variables
+- `NEXT_PUBLIC_API_URL` - API base URL (default: http://localhost:8080/api)
+- Database connection configured in `application.properties`
+
+### Build Modes
+- Frontend: `npm run build` (static export)
+- Backend: `./gradlew bootRun` (development) or `./gradlew build` (JAR)
+
+## Testing Strategy
+
+### Current State
+- Manual testing via browser
+- API testing via curl/Postman
+
+### Future Enhancements
+- Backend: JUnit 5 + MockK for Kotlin
+- Frontend: Jest + React Testing Library
+- E2E: Playwright for critical flows
+
+## Performance Considerations
+
+### Backend
+- R2DBC connection pool sizing
+- Reactive streams prevent blocking
+- Indexed columns for common queries
+
+### Frontend
+- Debounced search (300ms)
+- Client-side filtering where possible (boards, tags)
+- Static export for fast CDN delivery
+
+## Security Notes
+
+### Current Implementation
+- No authentication (development mode)
+- Input validation via Jakarta Bean Validation
+- XSS prevention via React auto-escaping
+- No CORS configuration (same-origin)
+
+### Production Requirements
+- Add JWT authentication
+- Configure CORS properly
+- Add rate limiting
+- Enable HTTPS
+- Sanitize all inputs
+- Implement authorization
+
+## Useful Commands
+
+```bash
+# View backend logs
+tail -f /tmp/backend.log
+
+# Check backend health
+curl http://localhost:8080/api/boards
+
+# Build frontend only
+cd frontend && npm run build
+
+# Clean build
+rm -rf frontend/out backend/src/main/resources/static
+
+# Database reset (H2 in-memory resets on restart)
+pkill -f gradle && ./gradlew bootRun
+
+# Git log with pretty format
+git log --oneline --graph --all
+
+# Check for uncommitted changes
+git status --short
+```
+
+## Documentation Maintenance
+
+### When to Update FEATURES.md
+- New user-facing feature added
+- Existing feature behavior changed
+- New workflow or use case discovered
+
+### When to Update openapi.json
+- New endpoint added
+- Endpoint path or method changed
+- Request/response schema modified
+- New query parameters or headers
+
+### When to Update CLAUDE.md
+- New architectural pattern discovered
+- Important gotcha identified
+- Common task procedure documented
+- Configuration or environment change
+
+**Frequency:** Update docs in same commit as code changes or in follow-up commit immediately after.
