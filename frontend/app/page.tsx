@@ -98,12 +98,17 @@ function HomeContent() {
     }
   };
 
-  const handleCreateTask = async (title: string, status: TaskStatus, description?: string, categoryId?: string) => {
+  const handleCreateTask = async (
+    title: string,
+    status: TaskStatus,
+    description?: string,
+    categoryId?: string
+  ) => {
     if (!currentBoard) return;
 
     try {
       const maxPosition = tasks
-        .filter((t) => t.status === status)
+        .filter(t => t.status === status)
         .reduce((max, t) => Math.max(max, t.position), 0);
 
       await taskApi.create({
@@ -146,7 +151,7 @@ function HomeContent() {
   const handleEditBoard = async (boardId: string, name: string, description?: string) => {
     try {
       const updatedBoard = await boardApi.update(boardId, name, description);
-      setBoards(boards.map(b => b.id === boardId ? updatedBoard : b));
+      setBoards(boards.map(b => (b.id === boardId ? updatedBoard : b)));
       if (currentBoard?.id === boardId) {
         setCurrentBoard(updatedBoard);
       }
@@ -195,7 +200,9 @@ function HomeContent() {
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Issue Tracker</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-8">No boards found. Create one to get started!</p>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">
+              No boards found. Create one to get started!
+            </p>
             <button
               onClick={() => setIsCreateBoardModalOpen(true)}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
@@ -298,11 +305,13 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+        </div>
+      }
+    >
       <HomeContent />
     </Suspense>
   );

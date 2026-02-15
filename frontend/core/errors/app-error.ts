@@ -1,4 +1,5 @@
 import { logger } from '../../shared/utils/logger';
+import { HTTP_STATUS } from '../../shared/constants/app-constants';
 
 /**
  * Base application error class
@@ -7,7 +8,7 @@ export class AppError extends Error {
   constructor(
     message: string,
     public code: string,
-    public statusCode: number = 500,
+    public statusCode: number = HTTP_STATUS.INTERNAL_SERVER_ERROR,
     public userMessage?: string // User-facing message (safe to display)
   ) {
     super(message);
@@ -33,7 +34,7 @@ export class ValidationError extends AppError {
     message: string,
     public field?: string
   ) {
-    super(message, 'VALIDATION_ERROR', 400, message);
+    super(message, 'VALIDATION_ERROR', HTTP_STATUS.BAD_REQUEST, message);
     this.name = 'ValidationError';
   }
 }
@@ -43,7 +44,7 @@ export class ValidationError extends AppError {
  */
 export class SecurityError extends AppError {
   constructor(message: string) {
-    super(message, 'SECURITY_ERROR', 403, 'Access Denied');
+    super(message, 'SECURITY_ERROR', HTTP_STATUS.FORBIDDEN, 'Access Denied');
     this.name = 'SecurityError';
     logger.warn('Security violation', { message });
   }

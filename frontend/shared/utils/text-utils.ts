@@ -12,6 +12,8 @@ export function convertMarkdownToPlainText(markdown: string): string {
     .trim();
 }
 
+const ELLIPSIS_LENGTH = 3; // Length of "..."
+
 /**
  * Truncates text to max length with ellipsis
  * @param text - Text to truncate
@@ -20,5 +22,5 @@ export function convertMarkdownToPlainText(markdown: string): string {
  */
 export function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength - 3) + '...';
+  return text.substring(0, maxLength - ELLIPSIS_LENGTH) + '...';
 }

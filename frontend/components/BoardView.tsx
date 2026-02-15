@@ -33,12 +33,7 @@ const COLUMNS = [
   { status: TaskStatus.DONE, title: 'Done', color: 'green' },
 ];
 
-export function BoardView({
-  tasks,
-  onCreateTask,
-  onUpdateTask,
-  onDeleteTask,
-}: BoardViewProps) {
+export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: BoardViewProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
@@ -77,7 +72,7 @@ export function BoardView({
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     return tasks
-      .filter((task) => {
+      .filter(task => {
         if (task.status !== status) return false;
 
         // Hide Done tasks older than 7 days
@@ -118,7 +113,13 @@ export function BoardView({
     let newStatus: TaskStatus;
 
     // Check if over.id is a TaskStatus enum value
-    const validStatuses = [TaskStatus.BACKLOG, TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.READY_FOR_DEPLOYMENT, TaskStatus.DONE];
+    const validStatuses = [
+      TaskStatus.BACKLOG,
+      TaskStatus.TODO,
+      TaskStatus.IN_PROGRESS,
+      TaskStatus.READY_FOR_DEPLOYMENT,
+      TaskStatus.DONE,
+    ];
     console.log('Checking if over.id is valid status:', { overId: over.id, validStatuses });
 
     if (validStatuses.includes(over.id as TaskStatus)) {
@@ -144,15 +145,14 @@ export function BoardView({
 
     // Calculate new position (add to end of column)
     const tasksInNewColumn = tasks.filter(t => t.status === newStatus && t.id !== active.id);
-    const newPosition = tasksInNewColumn.length > 0
-      ? Math.max(...tasksInNewColumn.map(t => t.position)) + 1
-      : 1;
+    const newPosition =
+      tasksInNewColumn.length > 0 ? Math.max(...tasksInNewColumn.map(t => t.position)) + 1 : 1;
 
     console.log('Updating task:', {
       taskId: activeTask.id,
       oldStatus: activeTask.status,
       newStatus,
-      newPosition
+      newPosition,
     });
 
     // Optimistic update - include all required fields
@@ -179,7 +179,7 @@ export function BoardView({
     >
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-          {COLUMNS.map((column) => (
+          {COLUMNS.map(column => (
             <Column
               key={column.status}
               title={column.title}
@@ -198,12 +198,7 @@ export function BoardView({
       <DragOverlay>
         {activeTask ? (
           <div className="rotate-3">
-            <TaskCard
-              task={activeTask}
-              onUpdate={() => {}}
-              onDelete={() => {}}
-              isDragging={true}
-            />
+            <TaskCard task={activeTask} onUpdate={() => {}} onDelete={() => {}} isDragging={true} />
           </div>
         ) : null}
       </DragOverlay>

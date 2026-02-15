@@ -17,7 +17,14 @@ interface TaskCardProps {
   };
 }
 
-export function TaskCard({ task, onUpdate, onDelete, onClick, isDragging = false, actionButton }: TaskCardProps) {
+export function TaskCard({
+  task,
+  onUpdate,
+  onDelete,
+  onClick,
+  isDragging = false,
+  actionButton,
+}: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -54,7 +61,7 @@ export function TaskCard({ task, onUpdate, onDelete, onClick, isDragging = false
       {/* Action button (shown on hover) */}
       {actionButton && (
         <button
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             actionButton.onClick();
           }}
@@ -75,9 +82,7 @@ export function TaskCard({ task, onUpdate, onDelete, onClick, isDragging = false
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-            {task.title}
-          </h3>
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">{task.title}</h3>
           {task.description && (
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
               {task.description}

@@ -20,9 +20,7 @@ export function Header({ board, boards, allTags, view, onViewChange, onTaskSelec
               {board?.name || 'Issue Tracker'}
             </h1>
             {board?.description && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {board.description}
-              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{board.description}</p>
             )}
           </div>
 

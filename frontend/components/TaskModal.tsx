@@ -60,15 +60,21 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-start justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           {isEditing ? (
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={e => setTitle(e.target.value)}
               className="flex-1 text-2xl font-semibold bg-transparent text-gray-900 dark:text-white focus:outline-none"
               placeholder="Task title"
               autoFocus
@@ -82,7 +88,15 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
             onClick={onClose}
             className="ml-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -98,7 +112,7 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
                 </label>
                 <textarea
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={e => setDescription(e.target.value)}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono"
                   placeholder="Supports: **bold**, *italic*, `code`, ```language blocks```, - [ ] task lists, tables, and more..."
                   rows={10}
@@ -139,7 +153,8 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
                     .join('\n');
 
                   return (
-                    <div className="prose prose-sm dark:prose-invert max-w-none
+                    <div
+                      className="prose prose-sm dark:prose-invert max-w-none
                   prose-p:text-gray-700 dark:prose-p:text-gray-300
                   prose-a:text-blue-600 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
                   prose-code:text-pink-600 dark:prose-code:text-pink-400 prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-[''] prose-code:after:content-['']
@@ -157,7 +172,8 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
                   [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:text-gray-900 dark:[&_h3]:text-white
                   [&_h4]:text-lg [&_h4]:font-semibold [&_h4]:mb-2 [&_h4]:text-gray-900 dark:[&_h4]:text-white
                   [&_h5]:text-base [&_h5]:font-semibold [&_h5]:mb-1 [&_h5]:text-gray-700 dark:[&_h5]:text-gray-300
-                  [&_h6]:text-sm [&_h6]:font-semibold [&_h6]:mb-1 [&_h6]:text-gray-600 dark:[&_h6]:text-gray-400">
+                  [&_h6]:text-sm [&_h6]:font-semibold [&_h6]:mb-1 [&_h6]:text-gray-600 dark:[&_h6]:text-gray-400"
+                    >
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         rehypePlugins={[rehypeHighlight]}
@@ -220,7 +236,9 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
                 <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                   <p>Created: {new Date(task.createdAt).toLocaleString()}</p>
                   <p>Updated: {new Date(task.updatedAt).toLocaleString()}</p>
-                  <p>Status: <span className="font-medium">{task.status.replace('_', ' ')}</span></p>
+                  <p>
+                    Status: <span className="font-medium">{task.status.replace('_', ' ')}</span>
+                  </p>
                 </div>
               </div>
             </div>

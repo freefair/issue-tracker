@@ -103,7 +103,7 @@ export function TagInput({ boardId, tags, onChange, placeholder = 'Add tags...' 
     <div ref={containerRef} className="relative">
       <div className="flex flex-wrap gap-2 p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
         {/* Existing tags as badges */}
-        {tags.map((tag) => (
+        {tags.map(tag => (
           <span
             key={tag}
             className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-md text-sm font-medium"
@@ -130,7 +130,7 @@ export function TagInput({ boardId, tags, onChange, placeholder = 'Add tags...' 
           ref={inputRef}
           type="text"
           value={input}
-          onChange={(e) => {
+          onChange={e => {
             setInput(e.target.value);
             setShowSuggestions(true);
             setSelectedIndex(-1);

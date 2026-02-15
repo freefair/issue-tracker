@@ -48,20 +48,16 @@ export function ConfirmDialog({
     >
       <div
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {title}
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
         </div>
 
         {/* Content */}
         <div className="p-6">
-          <p className="text-gray-600 dark:text-gray-400">
-            {message}
-          </p>
+          <p className="text-gray-600 dark:text-gray-400">{message}</p>
         </div>
 
         {/* Footer */}

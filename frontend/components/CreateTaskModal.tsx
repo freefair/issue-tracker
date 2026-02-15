@@ -10,7 +10,12 @@ interface CreateTaskModalProps {
   defaultStatus?: TaskStatus;
 }
 
-export function CreateTaskModal({ isOpen, onClose, onCreate, defaultStatus = TaskStatus.BACKLOG }: CreateTaskModalProps) {
+export function CreateTaskModal({
+  isOpen,
+  onClose,
+  onCreate,
+  defaultStatus = TaskStatus.BACKLOG,
+}: CreateTaskModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
@@ -46,18 +51,24 @@ export function CreateTaskModal({ isOpen, onClose, onCreate, defaultStatus = Tas
     >
       <div
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Create New Task
-          </h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create New Task</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
               <path d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -72,7 +83,7 @@ export function CreateTaskModal({ isOpen, onClose, onCreate, defaultStatus = Tas
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={e => setTitle(e.target.value)}
               placeholder="Task title..."
               className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
@@ -86,7 +97,7 @@ export function CreateTaskModal({ isOpen, onClose, onCreate, defaultStatus = Tas
             </label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={e => setDescription(e.target.value)}
               placeholder="Supports: **bold**, *italic*, `code`, ```language blocks```, [ ] task lists, tables..."
               className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono"
               rows={8}

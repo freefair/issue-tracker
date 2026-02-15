@@ -1,4 +1,12 @@
-import { Board, Task, CreateTaskRequest, UpdateTaskRequest, BacklogCategory, CreateBacklogCategoryRequest, UpdateBacklogCategoryRequest } from '@/types';
+import {
+  Board,
+  Task,
+  CreateTaskRequest,
+  UpdateTaskRequest,
+  BacklogCategory,
+  CreateBacklogCategoryRequest,
+  UpdateBacklogCategoryRequest,
+} from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
@@ -34,8 +42,7 @@ export const boardApi = {
       method: 'PUT',
       body: JSON.stringify({ name, description }),
     }),
-  delete: (id: string) =>
-    fetchApi<void>(`/boards/${id}`, { method: 'DELETE' }),
+  delete: (id: string) => fetchApi<void>(`/boards/${id}`, { method: 'DELETE' }),
 };
 
 // Task API

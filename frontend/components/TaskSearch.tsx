@@ -99,7 +99,10 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
     } else {
       // Suggest field values
       const fieldName = value.substring(0, colonIndex).toLowerCase();
-      const searchTerm = value.substring(colonIndex + 1).trim().toLowerCase();
+      const searchTerm = value
+        .substring(colonIndex + 1)
+        .trim()
+        .toLowerCase();
 
       let valueSuggestions: string[] = [];
 
@@ -112,9 +115,9 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
           .filter(tag => tag.toLowerCase().includes(searchTerm))
           .map(tag => `Tag:${tag}`);
       } else if (fieldName === 'status') {
-        valueSuggestions = STATUS_OPTIONS
-          .filter(s => s.label.toLowerCase().includes(searchTerm))
-          .map(s => `Status:${s.label}`);
+        valueSuggestions = STATUS_OPTIONS.filter(s =>
+          s.label.toLowerCase().includes(searchTerm)
+        ).map(s => `Status:${s.label}`);
       }
 
       setSuggestions(valueSuggestions);
@@ -185,9 +188,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
 
       if (statusChips.length > 0) {
         const selectedStatuses = statusChips.map(c => c.value);
-        filteredResults = filteredResults.filter(task =>
-          selectedStatuses.includes(task.status)
-        );
+        filteredResults = filteredResults.filter(task => selectedStatuses.includes(task.status));
       }
 
       setResults(filteredResults);
@@ -368,17 +369,22 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
               className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${getChipColor(chip.type)}`}
             >
               <span>{getChipLabel(chip)}</span>
-              {chip.type !== 'board' || chips.filter(c => c.type === 'board').length > 1 && (
-                <button
-                  onClick={() => removeChip(index)}
-                  className="hover:opacity-70"
-                  type="button"
-                >
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              )}
+              {chip.type !== 'board' ||
+                (chips.filter(c => c.type === 'board').length > 1 && (
+                  <button
+                    onClick={() => removeChip(index)}
+                    className="hover:opacity-70"
+                    type="button"
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                ))}
             </div>
           ))}
 
@@ -387,7 +393,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
             ref={inputRef}
             type="text"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            onChange={e => setInputValue(e.target.value)}
             onKeyDown={handleInputKeyDown}
             onFocus={() => {
               setIsFocused(true);
@@ -406,13 +412,13 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
                 }
               }
             }}
-            onBlur={(e) => {
+            onBlur={e => {
               // Don't blur if clicking within the container (results/suggestions)
               if (!containerRef.current?.contains(e.relatedTarget as Node)) {
                 setIsFocused(false);
               }
             }}
-            placeholder={chips.length === 0 ? "Search tasks... (⌘K)" : ""}
+            placeholder={chips.length === 0 ? 'Search tasks... (⌘K)' : ''}
             className="flex-1 min-w-[120px] bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none"
           />
         </div>
@@ -420,9 +426,25 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
         {/* Loading Indicator */}
         {isLoading && (
           <div className="flex-shrink-0">
-            <svg className="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              className="animate-spin h-4 w-4 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
           </div>
         )}
@@ -457,7 +479,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
             </div>
           ) : (
             <div className="p-2">
-              {results.map((task) => (
+              {results.map(task => (
                 <button
                   key={task.id}
                   onClick={() => handleSelectTask(task)}
@@ -491,9 +513,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
                         )}
                       </div>
                     </div>
-                    <div className="flex-shrink-0">
-                      {getStatusBadge(task.status)}
-                    </div>
+                    <div className="flex-shrink-0">{getStatusBadge(task.status)}</div>
                   </div>
                 </button>
               ))}

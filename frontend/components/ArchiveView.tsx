@@ -11,11 +11,7 @@ interface ArchiveViewProps {
   onDeleteTask: (taskId: string) => void;
 }
 
-export function ArchiveView({
-  tasks,
-  onUpdateTask,
-  onDeleteTask,
-}: ArchiveViewProps) {
+export function ArchiveView({ tasks, onUpdateTask, onDeleteTask }: ArchiveViewProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
@@ -40,7 +36,7 @@ export function ArchiveView({
       return date.toLocaleDateString('de-DE', {
         day: '2-digit',
         month: '2-digit',
-        year: 'numeric'
+        year: 'numeric',
       });
     } catch (e) {
       return 'Invalid date';
@@ -60,10 +56,11 @@ export function ArchiveView({
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   const filteredTasks = searchQuery
-    ? completedTasks.filter(task =>
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        task.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? completedTasks.filter(
+        task =>
+          task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          task.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          task.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
       )
     : completedTasks;
 
@@ -72,9 +69,7 @@ export function ArchiveView({
       <div className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Archive
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Archive</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {filteredTasks.length} completed {filteredTasks.length === 1 ? 'task' : 'tasks'}
             </p>
@@ -86,7 +81,7 @@ export function ArchiveView({
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             placeholder="Search completed tasks..."
             className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -94,7 +89,7 @@ export function ArchiveView({
 
         {/* Task List */}
         <div className="space-y-3">
-          {filteredTasks.map((task) => (
+          {filteredTasks.map(task => (
             <div key={task.id} className="flex items-start gap-3">
               <div className="flex-1">
                 <TaskCard

@@ -104,6 +104,16 @@ export default [
     },
   },
   {
+    // Legacy files - to be migrated to feature-based structure
+    files: ['app/page.tsx', 'components/**/*.{ts,tsx}'],
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
+    },
+  },
+  {
     ignores: [
       'node_modules/',
       '.next/',

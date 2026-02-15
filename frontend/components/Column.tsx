@@ -65,7 +65,7 @@ export function Column({
 
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-3 min-h-[200px] flex-1">
-          {tasks.map((task) => (
+          {tasks.map(task => (
             <TaskCard
               key={task.id}
               task={task}
@@ -78,7 +78,15 @@ export function Column({
                       label: 'To Backlog',
                       onClick: () => onUpdateTask(task.id, { status: TaskStatus.BACKLOG }),
                       icon: (
-                        <svg className="w-3 h-3" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
                           <path d="M11 17l-5-5m0 0l5-5m-5 5h12" />
                         </svg>
                       ),
@@ -87,7 +95,6 @@ export function Column({
               }
             />
           ))}
-
         </div>
       </SortableContext>
 
@@ -96,8 +103,8 @@ export function Column({
           <input
             type="text"
             value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            onKeyDown={(e) => {
+            onChange={e => setNewTaskTitle(e.target.value)}
+            onKeyDown={e => {
               if (e.key === 'Escape') {
                 setIsAdding(false);
                 setNewTaskTitle('');
@@ -110,8 +117,8 @@ export function Column({
           />
           <textarea
             value={newTaskDescription}
-            onChange={(e) => setNewTaskDescription(e.target.value)}
-            onKeyDown={(e) => {
+            onChange={e => setNewTaskDescription(e.target.value)}
+            onKeyDown={e => {
               if (e.key === 'Escape') {
                 setIsAdding(false);
                 setNewTaskTitle('');
