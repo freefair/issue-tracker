@@ -1,4 +1,4 @@
-import { Board, Task, CreateTaskRequest, UpdateTaskRequest } from '@/types';
+import { Board, Task, CreateTaskRequest, UpdateTaskRequest, BacklogCategory, CreateBacklogCategoryRequest, UpdateBacklogCategoryRequest } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
@@ -57,6 +57,25 @@ export const taskApi = {
       body: JSON.stringify(request),
     }),
   delete: (id: string) => fetchApi<void>(`/tasks/${id}`, { method: 'DELETE' }),
-  search: (boardId: string, query: string) =>
-    fetchApi<Task[]>(`/boards/${boardId}/tasks/search?q=${encodeURIComponent(query)}`),
+  searchByBoard: (boardId: string, query: string) =>
+    fetchApi<Task[]>(`/tasks/search?boardId=${boardId}&q=${encodeURIComponent(query)}`),
+  searchGlobal: (query: string) =>
+    fetchApi<Task[]>(`/tasks/search/global?q=${encodeURIComponent(query)}`),
+};
+
+// Backlog Category API
+export const backlogCategoryApi = {
+  getAll: (boardId: string) => fetchApi<BacklogCategory[]>(`/boards/${boardId}/backlog-categories`),
+  getById: (id: string) => fetchApi<BacklogCategory>(`/backlog-categories/${id}`),
+  create: (boardId: string, request: CreateBacklogCategoryRequest) =>
+    fetchApi<BacklogCategory>(`/boards/${boardId}/backlog-categories`, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }),
+  update: (id: string, request: UpdateBacklogCategoryRequest) =>
+    fetchApi<BacklogCategory>(`/backlog-categories/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(request),
+    }),
+  delete: (id: string) => fetchApi<void>(`/backlog-categories/${id}`, { method: 'DELETE' }),
 };
