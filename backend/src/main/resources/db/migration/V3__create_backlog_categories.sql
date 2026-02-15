@@ -3,8 +3,8 @@ CREATE TABLE backlog_categories (
     board_id UUID NOT NULL,
     name VARCHAR(255) NOT NULL,
     position INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_backlog_category_board FOREIGN KEY (board_id) REFERENCES boards(id) ON DELETE CASCADE
 );
 
