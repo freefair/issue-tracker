@@ -204,7 +204,7 @@ describe('BoardRepository', () => {
 
       const result = await repository.delete('1');
 
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
   });
 
