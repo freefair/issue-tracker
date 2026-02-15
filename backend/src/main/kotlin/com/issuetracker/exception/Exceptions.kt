@@ -1,14 +1,17 @@
 package com.issuetracker.exception
 
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.ResponseStatus
 import java.util.UUID
 
-sealed class ApplicationException(message: String) : RuntimeException(message)
-
+@ResponseStatus(HttpStatus.NOT_FOUND)
 class BoardNotFoundException(boardId: UUID) :
-    ApplicationException("Board not found with id: $boardId")
+    RuntimeException("Board not found with id: $boardId")
 
+@ResponseStatus(HttpStatus.NOT_FOUND)
 class TaskNotFoundException(taskId: UUID) :
-    ApplicationException("Task not found with id: $taskId")
+    RuntimeException("Task not found with id: $taskId")
 
+@ResponseStatus(HttpStatus.BAD_REQUEST)
 class InvalidOperationException(message: String) :
-    ApplicationException(message)
+    RuntimeException(message)
