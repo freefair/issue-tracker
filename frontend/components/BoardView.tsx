@@ -104,6 +104,7 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
 
     // Determine the new status
     let newStatus: TaskStatus;
+    let targetTask: Task | undefined;
 
     // Check if over.id is a TaskStatus enum value
     const validStatuses = [
@@ -121,7 +122,7 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
       console.log('Dropped on column:', newStatus);
     } else {
       // Dropped on another task - get that task's status
-      const targetTask = tasks.find(t => t.id === over.id);
+      targetTask = tasks.find(t => t.id === over.id);
       if (!targetTask) {
         console.log('Target task not found');
         return;
@@ -130,31 +131,47 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
       console.log('Dropped on task, using task status:', newStatus);
     }
 
-    // If status hasn't changed, no update needed
-    if (activeTask.status === newStatus) {
-      console.log('Status unchanged, skipping update');
-      return;
+    // Get all tasks in the target column (excluding the dragged task)
+    const tasksInColumn = tasks
+      .filter(t => t.status === newStatus && t.id !== active.id)
+      .sort((a, b) => a.position - b.position);
+
+    // Calculate new position
+    let newPosition: number;
+
+    if (targetTask && targetTask.status === newStatus) {
+      // Dropped on another task in the same or different column
+      // Insert before the target task
+      newPosition = targetTask.position;
+    } else {
+      // Dropped on empty column or at the end
+      newPosition =
+        tasksInColumn.length > 0 ? Math.max(...tasksInColumn.map(t => t.position)) + 1 : 0;
     }
 
-    // Calculate new position (add to end of column)
-    const tasksInNewColumn = tasks.filter(t => t.status === newStatus && t.id !== active.id);
-    const newPosition =
-      tasksInNewColumn.length > 0 ? Math.max(...tasksInNewColumn.map(t => t.position)) + 1 : 1;
+    // Check if anything changed
+    const statusChanged = activeTask.status !== newStatus;
+    const positionChanged = activeTask.position !== newPosition;
+
+    if (!statusChanged && !positionChanged) {
+      console.log('Nothing changed, skipping update');
+      return;
+    }
 
     console.log('Updating task:', {
       taskId: activeTask.id,
       oldStatus: activeTask.status,
       newStatus,
+      oldPosition: activeTask.position,
       newPosition,
+      statusChanged,
+      positionChanged,
     });
 
-    // Optimistic update - include all required fields
+    // Update with new status and/or position
     onUpdateTask(activeTask.id, {
-      title: activeTask.title,
-      description: activeTask.description,
       status: newStatus,
       position: newPosition,
-      tags: activeTask.tags,
     });
   };
 

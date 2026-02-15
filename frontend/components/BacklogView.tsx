@@ -449,7 +449,7 @@ export function BacklogView({
           setTasksByCategory(current => move(current, event));
         }, [])}
         onDragEnd={useCallback<DragDropEventHandlers['onDragEnd']>(
-          event => {
+          async event => {
             if (event.canceled) {
               setTasksByCategory(snapshot.current);
               return;
@@ -478,13 +478,31 @@ export function BacklogView({
 
               // Find the dragged task
               const movedTask = allTasks.find(t => t.id === source.id);
+              if (!movedTask) return;
 
-              if (movedTask && sourceGroup !== targetGroup) {
-                // Task moved to different category
-                const newCategoryId = targetGroup === 'uncategorized' ? undefined : targetGroup;
-                onUpdateTask(movedTask.id, {
-                  backlogCategoryId: newCategoryId,
-                });
+              // Check if category changed
+              const categoryChanged = sourceGroup !== targetGroup;
+              const newCategoryId = targetGroup === 'uncategorized' ? undefined : targetGroup;
+
+              // Get tasks in target category and calculate new positions
+              const tasksInTargetCategory = tasksByCategory[targetGroup] || [];
+              const newPosition = tasksInTargetCategory.findIndex(t => t.id === movedTask.id);
+
+              // Update backend with new category and/or position
+              const updates: Partial<Task> = {
+                position: newPosition,
+              };
+
+              if (categoryChanged) {
+                updates.backlogCategoryId = newCategoryId;
+              }
+
+              try {
+                await onUpdateTask(movedTask.id, updates);
+              } catch (error) {
+                console.error('Failed to update task position:', error);
+                // Revert UI on error
+                setTasksByCategory(snapshot.current);
               }
             }
           },
