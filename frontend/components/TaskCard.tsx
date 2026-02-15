@@ -27,8 +27,8 @@ export function TaskCard({
   disableSortable = false,
   actionButton,
 }: TaskCardProps) {
-  // Only use sortable if not disabled (for old API compatibility)
-  const sortable = useSortable({ id: task.id, disabled: disableSortable });
+  // Always call useSortable (React hook rules), but conditionally use its results
+  const sortable = useSortable({ id: task.id });
 
   const DRAGGING_OPACITY = 0.5;
   const MAX_VISIBLE_TAGS = 3;
