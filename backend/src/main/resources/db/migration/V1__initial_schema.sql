@@ -2,7 +2,7 @@
 
 -- Boards table
 CREATE TABLE boards (
-    id UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
+    id UUID PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -10,7 +10,7 @@ CREATE TABLE boards (
 
 -- Tasks table
 CREATE TABLE tasks (
-    id UUID DEFAULT RANDOM_UUID() PRIMARY KEY,
+    id UUID PRIMARY KEY,
     board_id UUID NOT NULL,
     title VARCHAR(500) NOT NULL,
     description TEXT NOT NULL DEFAULT '',
