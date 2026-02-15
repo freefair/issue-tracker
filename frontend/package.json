@@ -20,7 +20,7 @@
     "test:e2e": "cypress run",
     "test:a11y": "cypress run --spec 'cypress/e2e/accessibility.cy.ts'",
     "deploy": "npm run build && rm -rf ../backend/src/main/resources/static && cp -r out ../backend/src/main/resources/static",
-    "prepare": "cd .. && husky frontend/.husky"
+    "prepare": "cd .. && husky .husky"
   },
   "keywords": [],
   "author": "",
