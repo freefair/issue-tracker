@@ -15,6 +15,7 @@ dependencyResolutionManagement {
             version("spring-boot", "3.2.2")
             version("spring-dependency-management", "1.1.4")
             version("jib", "3.4.0")
+            version("flyway", "10.8.1")
 
             // Plugins
             plugin("kotlin-jvm", "org.jetbrains.kotlin.jvm").versionRef("kotlin")
@@ -45,6 +46,12 @@ dependencyResolutionManagement {
             library("r2dbc-postgresql", "org.postgresql", "r2dbc-postgresql").withoutVersion()
             library("r2dbc-h2", "io.r2dbc", "r2dbc-h2").withoutVersion()
             library("r2dbc-pool", "io.r2dbc", "r2dbc-pool").withoutVersion()
+
+            // Libraries - Database (JDBC for Flyway)
+            library("postgresql-jdbc", "org.postgresql", "postgresql").withoutVersion()
+            library("h2-jdbc", "com.h2database", "h2").withoutVersion()
+            library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
+            library("flyway-database-postgresql", "org.flywaydb", "flyway-database-postgresql").versionRef("flyway")
 
             // Bundles
             bundle("spring-boot-starters", listOf(

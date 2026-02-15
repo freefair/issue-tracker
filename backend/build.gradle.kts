@@ -16,6 +16,12 @@ dependencies {
     // R2DBC Database Drivers (using bundle)
     runtimeOnly(libs.bundles.r2dbc.drivers)
 
+    // Flyway for database migrations (uses JDBC)
+    implementation(libs.flyway.core)
+    implementation(libs.flyway.database.postgresql)
+    runtimeOnly(libs.postgresql.jdbc)
+    runtimeOnly(libs.h2.jdbc)
+
     // Development
     developmentOnly(libs.spring.boot.devtools)
 
