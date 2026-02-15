@@ -98,7 +98,9 @@ export default [
     },
     rules: {
       '@typescript-eslint/no-namespace': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
       'no-undef': 'off',
+      'no-magic-numbers': 'off',
     },
   },
   {
