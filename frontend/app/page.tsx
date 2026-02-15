@@ -1,36 +1,57 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Board, Task, TaskStatus } from '@/types';
 import { boardApi, taskApi } from '@/lib/api';
 import { BoardView } from '@/components/BoardView';
+import { BacklogView } from '@/components/BacklogView';
+import { ArchiveView } from '@/components/ArchiveView';
 import { Header } from '@/components/Header';
+import { Sidebar } from '@/components/Sidebar';
+import { CreateBoardModal } from '@/components/CreateBoardModal';
+import { EditBoardModal } from '@/components/EditBoardModal';
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const boardId = searchParams.get('board');
+
   const [boards, setBoards] = useState<Board[]>([]);
-  const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
+  const [currentBoard, setCurrentBoard] = useState<Board | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [view, setView] = useState<'board' | 'backlog' | 'archive'>('board');
+  const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
+  const [boardToEdit, setBoardToEdit] = useState<Board | null>(null);
 
   useEffect(() => {
     loadBoards();
   }, []);
 
   useEffect(() => {
-    if (selectedBoard) {
-      loadTasks(selectedBoard.id);
+    if (boards.length > 0) {
+      // If no board specified in URL, redirect to first board
+      if (!boardId) {
+        router.push(`/?board=${boards[0].id}`);
+      } else {
+        // Load the specified board
+        const board = boards.find(b => b.id === boardId);
+        if (board) {
+          setCurrentBoard(board);
+          loadTasks(boardId);
+        }
+      }
     }
-  }, [selectedBoard]);
+  }, [boardId, boards, router]);
 
   const loadBoards = async () => {
     try {
       setLoading(true);
       const data = await boardApi.getAll();
       setBoards(data);
-      if (data.length > 0 && !selectedBoard) {
-        setSelectedBoard(data[0]);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load boards');
     } finally {
@@ -47,8 +68,19 @@ export default function Home() {
     }
   };
 
-  const handleCreateTask = async (title: string, status: TaskStatus) => {
-    if (!selectedBoard) return;
+  const handleCreateBoard = async (name: string, description?: string) => {
+    try {
+      const board = await boardApi.create(name, description);
+      await loadBoards();
+      router.push(`/?board=${board.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create board');
+      console.error(err);
+    }
+  };
+
+  const handleCreateTask = async (title: string, status: TaskStatus, description?: string) => {
+    if (!currentBoard) return;
 
     try {
       const maxPosition = tasks
@@ -56,33 +88,69 @@ export default function Home() {
         .reduce((max, t) => Math.max(max, t.position), 0);
 
       await taskApi.create({
-        boardId: selectedBoard.id,
+        boardId: currentBoard.id,
         title,
+        description,
         status,
         position: maxPosition + 1,
       });
 
-      loadTasks(selectedBoard.id);
+      loadTasks(currentBoard.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create task');
     }
   };
 
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
+    if (!currentBoard) return;
+
     try {
       await taskApi.update(taskId, updates);
-      loadTasks(selectedBoard!.id);
+      loadTasks(currentBoard.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update task');
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    if (!currentBoard) return;
+
     try {
       await taskApi.delete(taskId);
-      loadTasks(selectedBoard!.id);
+      loadTasks(currentBoard.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete task');
+    }
+  };
+
+  const handleEditBoard = async (boardId: string, name: string, description?: string) => {
+    try {
+      const updatedBoard = await boardApi.update(boardId, name, description);
+      setBoards(boards.map(b => b.id === boardId ? updatedBoard : b));
+      if (currentBoard?.id === boardId) {
+        setCurrentBoard(updatedBoard);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update board');
+    }
+  };
+
+  const handleDeleteBoard = async (boardId: string) => {
+    try {
+      await boardApi.delete(boardId);
+      const updatedBoards = boards.filter(b => b.id !== boardId);
+      setBoards(updatedBoards);
+
+      // If we deleted the current board, redirect to another board or home
+      if (boardId === currentBoard?.id) {
+        if (updatedBoards.length > 0) {
+          router.push(`/?board=${updatedBoards[0].id}`);
+        } else {
+          router.push('/');
+        }
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete board');
     }
   };
 
@@ -91,6 +159,31 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-gray-600 dark:text-gray-400">Loading...</div>
       </div>
+    );
+  }
+
+  if (boards.length === 0) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Issue Tracker</h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-8">No boards found. Create one to get started!</p>
+            <button
+              onClick={() => setIsCreateBoardModalOpen(true)}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Create Your First Board
+            </button>
+          </div>
+        </div>
+
+        <CreateBoardModal
+          isOpen={isCreateBoardModalOpen}
+          onClose={() => setIsCreateBoardModalOpen(false)}
+          onCreate={handleCreateBoard}
+        />
+      </>
     );
   }
 
@@ -103,25 +196,68 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Sidebar
         boards={boards}
-        selectedBoard={selectedBoard}
-        onSelectBoard={setSelectedBoard}
-        onCreateBoard={async (name, description) => {
-          await boardApi.create(name, description);
-          loadBoards();
-        }}
+        currentBoardId={boardId || undefined}
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        onCreateBoard={() => setIsCreateBoardModalOpen(true)}
+        onEditBoard={setBoardToEdit}
+        onDeleteBoard={handleDeleteBoard}
       />
-      {selectedBoard && (
-        <BoardView
-          board={selectedBoard}
-          tasks={tasks}
-          onCreateTask={handleCreateTask}
-          onUpdateTask={handleUpdateTask}
-          onDeleteTask={handleDeleteTask}
-        />
-      )}
+      <main className={`flex-1 transition-all duration-200 ${isSidebarOpen ? 'md:ml-60' : 'ml-0'}`}>
+        <Header board={currentBoard} view={view} onViewChange={setView} />
+        {currentBoard && view === 'board' && (
+          <BoardView
+            board={currentBoard}
+            tasks={tasks}
+            onCreateTask={handleCreateTask}
+            onUpdateTask={handleUpdateTask}
+            onDeleteTask={handleDeleteTask}
+          />
+        )}
+        {currentBoard && view === 'backlog' && (
+          <BacklogView
+            tasks={tasks}
+            onCreateTask={handleCreateTask}
+            onUpdateTask={handleUpdateTask}
+            onDeleteTask={handleDeleteTask}
+          />
+        )}
+        {currentBoard && view === 'archive' && (
+          <ArchiveView
+            tasks={tasks}
+            onUpdateTask={handleUpdateTask}
+            onDeleteTask={handleDeleteTask}
+          />
+        )}
+      </main>
+
+      <CreateBoardModal
+        isOpen={isCreateBoardModalOpen}
+        onClose={() => setIsCreateBoardModalOpen(false)}
+        onCreate={handleCreateBoard}
+      />
+
+      <EditBoardModal
+        board={boardToEdit}
+        isOpen={!!boardToEdit}
+        onClose={() => setBoardToEdit(null)}
+        onUpdate={handleEditBoard}
+      />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
