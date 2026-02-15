@@ -168,10 +168,67 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
       positionChanged,
     });
 
-    // Update with new status and/or position
-    onUpdateTask(activeTask.id, {
-      status: newStatus,
-      position: newPosition,
+    // Update all affected tasks' positions
+    const updates: Array<{ id: string; updates: Partial<Task> }> = [];
+
+    // 1. Update the dragged task
+    updates.push({
+      id: activeTask.id,
+      updates: {
+        status: newStatus,
+        position: newPosition,
+      },
+    });
+
+    // 2. If position changed within same column, update other tasks
+    if (activeTask.status === newStatus && positionChanged) {
+      // Moving within same column - shift other tasks
+      tasksInColumn.forEach(task => {
+        if (activeTask.position < newPosition) {
+          // Moving down: decrement tasks between old and new position
+          if (task.position > activeTask.position && task.position <= newPosition) {
+            updates.push({
+              id: task.id,
+              updates: { position: task.position - 1 },
+            });
+          }
+        } else {
+          // Moving up: increment tasks between new and old position
+          if (task.position >= newPosition && task.position < activeTask.position) {
+            updates.push({
+              id: task.id,
+              updates: { position: task.position + 1 },
+            });
+          }
+        }
+      });
+    } else if (statusChanged) {
+      // Moving to different column
+      // 3a. Shift tasks in old column (close the gap)
+      tasks
+        .filter(t => t.status === activeTask.status && t.position > activeTask.position)
+        .forEach(task => {
+          updates.push({
+            id: task.id,
+            updates: { position: task.position - 1 },
+          });
+        });
+
+      // 3b. Shift tasks in new column (make space)
+      tasksInColumn
+        .filter(t => t.position >= newPosition)
+        .forEach(task => {
+          updates.push({
+            id: task.id,
+            updates: { position: task.position + 1 },
+          });
+        });
+    }
+
+    // Execute all updates
+    console.log('Updating positions:', updates);
+    updates.forEach(({ id, updates: taskUpdates }) => {
+      onUpdateTask(id, taskUpdates);
     });
   };
 

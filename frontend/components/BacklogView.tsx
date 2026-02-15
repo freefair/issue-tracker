@@ -484,23 +484,82 @@ export function BacklogView({
               const categoryChanged = sourceGroup !== targetGroup;
               const newCategoryId = targetGroup === 'uncategorized' ? undefined : targetGroup;
 
-              // Get tasks in target category and calculate new positions
+              // Get tasks in source and target categories
+              const tasksInSourceCategory = tasksByCategory[sourceGroup] || [];
               const tasksInTargetCategory = tasksByCategory[targetGroup] || [];
               const newPosition = tasksInTargetCategory.findIndex(t => t.id === movedTask.id);
+              const oldPosition = tasksInSourceCategory.findIndex(t => t.id === movedTask.id);
 
-              // Update backend with new category and/or position
-              const updates: Partial<Task> = {
+              // Build array of all updates to execute
+              const updates: Array<{ id: string; updates: Partial<Task> }> = [];
+
+              // 1. Update the moved task
+              const movedTaskUpdates: Partial<Task> = {
                 position: newPosition,
               };
+              if (categoryChanged) {
+                movedTaskUpdates.backlogCategoryId = newCategoryId;
+              }
+              updates.push({ id: movedTask.id, updates: movedTaskUpdates });
 
               if (categoryChanged) {
-                updates.backlogCategoryId = newCategoryId;
+                // 2a. Close gap in source category
+                tasksInSourceCategory
+                  .filter((t, index) => index > oldPosition)
+                  .forEach((task, index) => {
+                    updates.push({
+                      id: task.id,
+                      updates: { position: oldPosition + index },
+                    });
+                  });
+
+                // 2b. Make space in target category
+                tasksInTargetCategory
+                  .filter((t, index) => t.id !== movedTask.id && index >= newPosition)
+                  .forEach((task, index) => {
+                    updates.push({
+                      id: task.id,
+                      updates: { position: newPosition + index + 1 },
+                    });
+                  });
+              } else {
+                // Moving within same category
+                if (oldPosition < newPosition) {
+                  // Moving down: shift tasks between old and new position
+                  tasksInSourceCategory
+                    .filter(
+                      (t, index) =>
+                        index > oldPosition && index <= newPosition && t.id !== movedTask.id
+                    )
+                    .forEach((task, index) => {
+                      updates.push({
+                        id: task.id,
+                        updates: { position: oldPosition + index },
+                      });
+                    });
+                } else if (oldPosition > newPosition) {
+                  // Moving up: shift tasks between new and old position
+                  tasksInSourceCategory
+                    .filter(
+                      (t, index) =>
+                        index >= newPosition && index < oldPosition && t.id !== movedTask.id
+                    )
+                    .forEach((task, index) => {
+                      updates.push({
+                        id: task.id,
+                        updates: { position: newPosition + index + 1 },
+                      });
+                    });
+                }
               }
 
+              // Execute all updates
               try {
-                await onUpdateTask(movedTask.id, updates);
+                for (const { id, updates: taskUpdates } of updates) {
+                  await onUpdateTask(id, taskUpdates);
+                }
               } catch (error) {
-                console.error('Failed to update task position:', error);
+                console.error('Failed to update task positions:', error);
                 // Revert UI on error
                 setTasksByCategory(snapshot.current);
               }
