@@ -1,2 +1,8 @@
 #!/bin/sh
+
+# Frontend linting
 cd frontend && npx lint-staged
+
+# Backend tests
+cd ..
+./gradlew test -x npmInstall -x buildFrontend -x copyFrontend
