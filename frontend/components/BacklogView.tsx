@@ -463,10 +463,22 @@ export function BacklogView({
             if (source && target && source.type === 'task') {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const sourceGroup = (source.data as any)?.group;
-              const targetGroup = String(target.id);
 
-              // Find the task
+              // Target could be another task or a category container
+              // If it's a task, find which group it belongs to
               const allTasks = Object.values(tasksByCategory).flat();
+              const targetTask = allTasks.find(t => t.id === target.id);
+
+              let targetGroup: string;
+              if (targetTask) {
+                // Dropped on a task - use that task's category
+                targetGroup = targetTask.backlogCategoryId || 'uncategorized';
+              } else {
+                // Dropped on a category container (div with category.id)
+                targetGroup = String(target.id);
+              }
+
+              // Find the dragged task
               const movedTask = allTasks.find(t => t.id === source.id);
 
               if (movedTask && sourceGroup !== targetGroup) {
