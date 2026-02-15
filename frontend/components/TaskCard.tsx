@@ -34,15 +34,25 @@ export function TaskCard({
     isDragging: isSortableDragging,
   } = useSortable({ id: task.id });
 
+  const DRAGGING_OPACITY = 0.5;
+  const MAX_VISIBLE_TAGS = 3;
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isSortableDragging ? 0.5 : 1,
+    opacity: isSortableDragging ? DRAGGING_OPACITY : 1,
   };
 
   const handleClick = (_e: React.MouseEvent) => {
     // Only open modal if not dragging
     if (!isSortableDragging && !isDragging && onClick) {
+      onClick();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === 'Enter' || e.key === ' ') && !isSortableDragging && !isDragging && onClick) {
+      e.preventDefault();
       onClick();
     }
   };
@@ -57,6 +67,9 @@ export function TaskCard({
         isDragging ? 'shadow-xl' : ''
       }`}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={0}
     >
       {/* Action button (shown on hover) */}
       {actionButton && (
@@ -90,7 +103,7 @@ export function TaskCard({
           )}
           {task.tags && task.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {task.tags.slice(0, 3).map((tag, index) => (
+              {task.tags.slice(0, MAX_VISIBLE_TAGS).map((tag, index) => (
                 <span
                   key={index}
                   className="px-2 py-0.5 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-md text-xs font-medium"
@@ -98,9 +111,9 @@ export function TaskCard({
                   {tag}
                 </span>
               ))}
-              {task.tags.length > 3 && (
+              {task.tags.length > MAX_VISIBLE_TAGS && (
                 <span className="px-2 py-0.5 text-gray-400 dark:text-gray-500 text-xs font-medium">
-                  +{task.tags.length - 3}
+                  +{task.tags.length - MAX_VISIBLE_TAGS}
                 </span>
               )}
             </div>

@@ -41,18 +41,41 @@ export function ConfirmDialog({
 
   if (!isOpen) return null;
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onCancel();
+    }
+  };
+
+  const handleBackdropKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      onCancel();
+    }
+  };
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-dialog-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={onCancel}
+      onClick={handleBackdropClick}
+      onKeyDown={handleBackdropKeyDown}
+      tabIndex={-1}
     >
       <div
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full"
         onClick={e => e.stopPropagation()}
+        role="document"
       >
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{title}</h2>
+          <h2
+            id="confirm-dialog-title"
+            className="text-xl font-semibold text-gray-900 dark:text-white"
+          >
+            {title}
+          </h2>
         </div>
 
         {/* Content */}
@@ -63,12 +86,14 @@ export function ConfirmDialog({
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700">
           <button
+            type="button"
             onClick={onCancel}
             className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium transition-colors"
           >
             {cancelLabel}
           </button>
           <button
+            type="button"
             onClick={() => {
               onConfirm();
               onCancel();

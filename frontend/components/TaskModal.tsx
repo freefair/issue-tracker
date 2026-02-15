@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Task } from '@/types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -23,16 +23,15 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
   const [description, setDescription] = useState(task.description);
   const [tags, setTags] = useState<string[]>(task.tags);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const previousTaskIdRef = useRef<string>(task.id);
 
-  // Update internal state when task changes (using ref to avoid setState in useEffect warning)
-  if (task.id !== previousTaskIdRef.current) {
+  // Update internal state when task ID changes (new task selected)
+  // This is an intentional sync from props to state
+  useEffect(() => {
     setTitle(task.title);
     setDescription(task.description);
     setTags(task.tags);
     setIsEditing(false);
-    previousTaskIdRef.current = task.id;
-  }
+  }, [task.id, task.title, task.description, task.tags]);
 
   if (!isOpen) return null;
 

@@ -10,6 +10,7 @@ interface TagInputProps {
 }
 
 export function TagInput({ boardId, tags, onChange, placeholder = 'Add tags...' }: TagInputProps) {
+  const SUGGESTION_DEBOUNCE_MS = 200;
   const [input, setInput] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -42,7 +43,7 @@ export function TagInput({ boardId, tags, onChange, placeholder = 'Add tags...' 
       }
     };
 
-    const debounceTimer = setTimeout(fetchSuggestions, 200);
+    const debounceTimer = setTimeout(fetchSuggestions, SUGGESTION_DEBOUNCE_MS);
     return () => clearTimeout(debounceTimer);
   }, [input, boardId, tags]);
 

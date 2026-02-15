@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Board } from '@/types';
 
 interface EditBoardModalProps {
@@ -14,14 +14,14 @@ export function EditBoardModal({ board, isOpen, onClose, onUpdate }: EditBoardMo
   // Initialize state from board prop
   const [name, setName] = useState(board?.name || '');
   const [description, setDescription] = useState(board?.description || '');
-  const previousBoardIdRef = useRef<string | null>(null);
 
-  // Sync state when board changes (using ref to avoid setState in useEffect warning)
-  if (board && board.id !== previousBoardIdRef.current) {
-    setName(board.name);
-    setDescription(board.description || '');
-    previousBoardIdRef.current = board.id;
-  }
+  // Sync state when board changes (intentional sync from props to state)
+  useEffect(() => {
+    if (board) {
+      setName(board.name);
+      setDescription(board.description || '');
+    }
+  }, [board?.id, board?.name, board?.description]);
 
   if (!isOpen || !board) return null;
 
