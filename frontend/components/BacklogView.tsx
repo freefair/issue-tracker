@@ -156,40 +156,42 @@ function SortableCategory({
         </div>
       </div>
 
-      <div className="space-y-3">
-        {tasks.map(task => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            onUpdate={onTaskUpdate}
-            onDelete={onTaskDelete}
-            onClick={() => onTaskClick(task)}
-            actionButton={{
-              label: 'To Todo',
-              onClick: () => onTaskUpdate(task.id, { status: TaskStatus.TODO }),
-              icon: (
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              ),
-            }}
-          />
-        ))}
+      <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-3">
+          {tasks.map(task => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onUpdate={onTaskUpdate}
+              onDelete={onTaskDelete}
+              onClick={() => onTaskClick(task)}
+              actionButton={{
+                label: 'To Todo',
+                onClick: () => onTaskUpdate(task.id, { status: TaskStatus.TODO }),
+                icon: (
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                ),
+              }}
+            />
+          ))}
 
-        {tasks.length === 0 && (
-          <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
-            No tasks in this category
-          </div>
-        )}
-      </div>
+          {tasks.length === 0 && (
+            <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
+              No tasks in this category
+            </div>
+          )}
+        </div>
+      </SortableContext>
     </div>
   );
 }
@@ -310,38 +312,58 @@ export function BacklogView({
     setSelectedCategoryId(undefined);
   };
 
-  const handleCategoryDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over || active.id === over.id) return;
 
-    const oldIndex = categories.findIndex(c => c.id === active.id);
-    const newIndex = categories.findIndex(c => c.id === over.id);
+    // Check if dragging a category
+    const isDraggingCategory = categories.some(c => c.id === active.id);
 
-    if (oldIndex === -1 || newIndex === -1) return;
+    if (isDraggingCategory) {
+      // Handle category reordering
+      const oldIndex = categories.findIndex(c => c.id === active.id);
+      const newIndex = categories.findIndex(c => c.id === over.id);
 
-    // Reorder categories locally
-    const reorderedCategories = [...categories];
-    const [movedCategory] = reorderedCategories.splice(oldIndex, 1);
-    reorderedCategories.splice(newIndex, 0, movedCategory);
+      if (oldIndex === -1 || newIndex === -1) return;
 
-    // Update positions
-    const updatedCategories = reorderedCategories.map((cat, index) => ({
-      ...cat,
-      position: index,
-    }));
+      const reorderedCategories = [...categories];
+      const [movedCategory] = reorderedCategories.splice(oldIndex, 1);
+      reorderedCategories.splice(newIndex, 0, movedCategory);
 
-    setCategories(updatedCategories);
+      const updatedCategories = reorderedCategories.map((cat, index) => ({
+        ...cat,
+        position: index,
+      }));
 
-    // Update position in backend
-    try {
-      await backlogCategoryApi.update(movedCategory.id, {
-        position: newIndex,
-      });
-    } catch (error) {
-      console.error('Failed to update category position:', error);
-      // Revert on error
-      loadCategories();
+      setCategories(updatedCategories);
+
+      try {
+        await backlogCategoryApi.update(movedCategory.id, {
+          position: newIndex,
+        });
+      } catch (error) {
+        console.error('Failed to update category position:', error);
+        loadCategories();
+      }
+    } else {
+      // Handle task movement between categories
+      const draggedTask = backlogTasks.find(t => t.id === active.id);
+      if (!draggedTask) return;
+
+      // Find the task it was dropped on
+      const targetTask = backlogTasks.find(t => t.id === over.id);
+      if (!targetTask) return;
+
+      // Update the dragged task to have the same category as the target task
+      const newCategoryId = targetTask.backlogCategoryId || undefined;
+
+      // Only update if category changed
+      if (newCategoryId !== draggedTask.backlogCategoryId) {
+        onUpdateTask(draggedTask.id, {
+          backlogCategoryId: newCategoryId,
+        });
+      }
     }
   };
 
@@ -411,11 +433,7 @@ export function BacklogView({
       )}
 
       {/* Categories */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleCategoryDragEnd}
-      >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={categories.map(c => c.id)} strategy={verticalListSortingStrategy}>
           {categories.map(category => {
             const categoryTasks = getTasksByCategory(category.id);
@@ -460,34 +478,39 @@ export function BacklogView({
           </div>
         </div>
         {uncategorizedTasks.length > 0 ? (
-          <div className="space-y-3">
-            {uncategorizedTasks.map(task => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onUpdate={onUpdateTask}
-                onDelete={onDeleteTask}
-                onClick={() => setSelectedTask(task)}
-                actionButton={{
-                  label: 'To Todo',
-                  onClick: () => onUpdateTask(task.id, { status: TaskStatus.TODO }),
-                  icon: (
-                    <svg
-                      className="w-3 h-3"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  ),
-                }}
-              />
-            ))}
-          </div>
+          <SortableContext
+            items={uncategorizedTasks.map(t => t.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-3">
+              {uncategorizedTasks.map(task => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onUpdate={onUpdateTask}
+                  onDelete={onDeleteTask}
+                  onClick={() => setSelectedTask(task)}
+                  actionButton={{
+                    label: 'To Todo',
+                    onClick: () => onUpdateTask(task.id, { status: TaskStatus.TODO }),
+                    icon: (
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    ),
+                  }}
+                />
+              ))}
+            </div>
+          </SortableContext>
         ) : (
           <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
             No uncategorized tasks. Click &quot;+ Task&quot; to create one.
