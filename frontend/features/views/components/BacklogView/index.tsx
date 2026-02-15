@@ -33,10 +33,7 @@ export function BacklogView({
   renderTask,
 }: BacklogViewProps) {
   // Filter only backlog tasks
-  const backlogTasks = useMemo(
-    () => tasks.filter(t => t.status === TASK_STATUS.BACKLOG),
-    [tasks]
-  );
+  const backlogTasks = useMemo(() => tasks.filter(t => t.status === TASK_STATUS.BACKLOG), [tasks]);
 
   // Group tasks by category
   const tasksByCategory = useMemo(() => {

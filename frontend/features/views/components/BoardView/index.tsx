@@ -37,7 +37,11 @@ export function BoardView({
     const newStatus = over.id as string;
 
     // Check if it's a valid status
-    if (!Object.values(TASK_STATUS).includes(newStatus as typeof TASK_STATUS[keyof typeof TASK_STATUS])) {
+    if (
+      !Object.values(TASK_STATUS).includes(
+        newStatus as (typeof TASK_STATUS)[keyof typeof TASK_STATUS]
+      )
+    ) {
       return;
     }
 
@@ -45,7 +49,9 @@ export function BoardView({
     if (!task || task.status === newStatus) return;
 
     // Update task status
-    await onUpdateTask(taskId, { status: newStatus as typeof TASK_STATUS[keyof typeof TASK_STATUS] });
+    await onUpdateTask(taskId, {
+      status: newStatus as (typeof TASK_STATUS)[keyof typeof TASK_STATUS],
+    });
   };
 
   const { sensors } = useDragAndDrop({
@@ -60,13 +66,9 @@ export function BoardView({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCorners}
-      onDragEnd={handleDragEnd}
+      onDragEnd={event => void handleDragEnd(event)}
     >
-      <div
-        className="grid grid-cols-4 gap-4 h-full"
-        role="region"
-        aria-label="Kanban board"
-      >
+      <div className="grid grid-cols-4 gap-4 h-full" role="region" aria-label="Kanban board">
         {COLUMNS.map(column => {
           const columnTasks = byStatus(column.id);
 

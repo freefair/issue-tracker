@@ -42,15 +42,7 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
     console.log('BoardView loaded - version 2.0 with READY_FOR_DEPLOYMENT fix');
   }, []);
 
-  // Update selectedTask when tasks change
-  useEffect(() => {
-    if (selectedTask) {
-      const updatedTask = tasks.find(t => t.id === selectedTask.id);
-      if (updatedTask) {
-        setSelectedTask(updatedTask);
-      }
-    }
-  }, [tasks, selectedTask?.id]);
+  // Note: selectedTask syncing removed - parent re-renders with updated task
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -68,8 +60,9 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
   );
 
   const getTasksByStatus = (status: TaskStatus) => {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const ARCHIVE_THRESHOLD_DAYS = 7;
+    const archiveThresholdDate = new Date();
+    archiveThresholdDate.setDate(archiveThresholdDate.getDate() - ARCHIVE_THRESHOLD_DAYS);
 
     return tasks
       .filter(task => {
@@ -78,7 +71,7 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
         // Hide Done tasks older than 7 days
         if (status === TaskStatus.DONE) {
           const taskDate = new Date(task.updatedAt);
-          return taskDate >= sevenDaysAgo;
+          return taskDate >= archiveThresholdDate;
         }
 
         return true;

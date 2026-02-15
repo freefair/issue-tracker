@@ -53,9 +53,7 @@ export function Column({
           ))}
         </SortableContext>
 
-        {tasks.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-8">No tasks</p>
-        )}
+        {tasks.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No tasks</p>}
       </div>
 
       <div className="p-4 border-t">

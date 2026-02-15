@@ -11,16 +11,21 @@ interface EditBoardModalProps {
 }
 
 export function EditBoardModal({ board, isOpen, onClose, onUpdate }: EditBoardModalProps) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  // Initialize state from board prop
+  const [name, setName] = useState(board?.name || '');
+  const [description, setDescription] = useState(board?.description || '');
 
-  // Update form when board changes
+  // Sync state when board ID changes (new board selected)
+  const [currentBoardId, setCurrentBoardId] = useState<string | null>(board?.id || null);
+
+  // Only update state when board ID changes (not on every render)
   useEffect(() => {
-    if (board) {
+    if (board && board.id !== currentBoardId) {
       setName(board.name);
       setDescription(board.description || '');
+      setCurrentBoardId(board.id);
     }
-  }, [board]);
+  }, [board, currentBoardId]);
 
   if (!isOpen || !board) return null;
 
@@ -38,11 +43,21 @@ export function EditBoardModal({ board, isOpen, onClose, onUpdate }: EditBoardMo
     }
   };
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-board-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
+      tabIndex={-1}
     >
       <div
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full"
@@ -50,9 +65,13 @@ export function EditBoardModal({ board, isOpen, onClose, onUpdate }: EditBoardMo
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Board</h2>
+          <h2 id="edit-board-title" className="text-xl font-semibold text-gray-900 dark:text-white">
+            Edit Board
+          </h2>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close dialog"
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <svg
@@ -72,25 +91,32 @@ export function EditBoardModal({ board, isOpen, onClose, onUpdate }: EditBoardMo
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label
+              htmlFor="edit-board-name-input"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               Board Name *
             </label>
             <input
+              id="edit-board-name-input"
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g., Project Alpha"
               className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              autoFocus
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label
+              htmlFor="edit-board-description-input"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
               Description (Optional)
             </label>
             <textarea
+              id="edit-board-description-input"
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Brief description of this board..."

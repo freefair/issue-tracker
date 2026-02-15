@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Task, TaskStatus } from '@/types';
 import { TaskCard } from './TaskCard';
 import { TaskModal } from './TaskModal';
@@ -15,15 +15,7 @@ export function ArchiveView({ tasks, onUpdateTask, onDeleteTask }: ArchiveViewPr
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  // Update selectedTask when tasks change
-  useEffect(() => {
-    if (selectedTask) {
-      const updatedTask = tasks.find(t => t.id === selectedTask.id);
-      if (updatedTask) {
-        setSelectedTask(updatedTask);
-      }
-    }
-  }, [tasks, selectedTask?.id]);
+  // Note: selectedTask syncing removed - parent re-renders with updated task
 
   // Helper function to format date correctly
   const formatDate = (dateStr: string) => {
@@ -38,20 +30,21 @@ export function ArchiveView({ tasks, onUpdateTask, onDeleteTask }: ArchiveViewPr
         month: '2-digit',
         year: 'numeric',
       });
-    } catch (e) {
+    } catch {
       return 'Invalid date';
     }
   };
 
-  // Only show tasks that have been in DONE status for more than 7 days
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  // Only show tasks that have been in DONE status for more than ARCHIVE_THRESHOLD_DAYS
+  const ARCHIVE_THRESHOLD_DAYS = 7;
+  const archiveThresholdDate = new Date();
+  archiveThresholdDate.setDate(archiveThresholdDate.getDate() - ARCHIVE_THRESHOLD_DAYS);
 
   const completedTasks = tasks
     .filter(task => {
       if (task.status !== TaskStatus.DONE) return false;
       const taskDate = new Date(task.updatedAt);
-      return taskDate < sevenDaysAgo; // Only show if older than 7 days
+      return taskDate < archiveThresholdDate; // Only show if older than threshold
     })
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 

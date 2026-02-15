@@ -14,12 +14,7 @@ interface ArchiveViewProps {
  * Archive View
  * Displays archived tasks (DONE tasks older than 7 days)
  */
-export function ArchiveView({
-  tasks,
-  onTaskClick,
-  onRestoreTask,
-  renderTask,
-}: ArchiveViewProps) {
+export function ArchiveView({ tasks, onTaskClick, onRestoreTask, renderTask }: ArchiveViewProps) {
   const archivedTasks = useMemo(() => filterArchivableTasks(tasks), [tasks]);
 
   // Group by month
@@ -70,9 +65,7 @@ export function ArchiveView({
       {archivedTasks.length === 0 && (
         <div className="text-center py-12 text-gray-400">
           <p>No archived tasks yet.</p>
-          <p className="text-sm mt-2">
-            Tasks are automatically archived 7 days after completion.
-          </p>
+          <p className="text-sm mt-2">Tasks are automatically archived 7 days after completion.</p>
         </div>
       )}
 

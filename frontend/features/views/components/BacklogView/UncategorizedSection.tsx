@@ -17,10 +17,7 @@ export function UncategorizedSection({
   renderTask,
 }: UncategorizedSectionProps) {
   return (
-    <div
-      className="bg-white rounded-lg border p-4"
-      data-testid="uncategorized-section"
-    >
+    <div className="bg-white rounded-lg border p-4" data-testid="uncategorized-section">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-700">Uncategorized</h3>
         <span className="text-sm text-gray-500">{tasks.length}</span>
@@ -34,9 +31,7 @@ export function UncategorizedSection({
         ))}
 
         {tasks.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-4">
-            No uncategorized tasks
-          </p>
+          <p className="text-sm text-gray-400 text-center py-4">No uncategorized tasks</p>
         )}
       </div>
 

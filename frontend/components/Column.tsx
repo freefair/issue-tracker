@@ -113,7 +113,6 @@ export function Column({
             }}
             placeholder="Task title..."
             className="w-full bg-transparent text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none mb-2"
-            autoFocus
           />
           <textarea
             value={newTaskDescription}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Task, TaskStatus, BacklogCategory } from '@/types';
 import { TaskCard } from './TaskCard';
 import { TaskModal } from './TaskModal';
@@ -101,7 +101,6 @@ function SortableCategory({
               }}
               onBlur={() => onEditEnd(category.id)}
               className="flex-1 text-lg font-semibold bg-transparent text-gray-900 dark:text-white focus:outline-none border-b-2 border-purple-500"
-              autoFocus
             />
           ) : (
             <h3 className="flex-1 text-lg font-semibold text-gray-900 dark:text-white">
@@ -220,29 +219,22 @@ export function BacklogView({
     })
   );
 
-  // Load categories
-  useEffect(() => {
-    loadCategories();
-  }, [boardId]);
-
-  const loadCategories = async () => {
+  // Load categories function
+  const loadCategories = useCallback(async () => {
     try {
       const cats = await backlogCategoryApi.getAll(boardId);
       setCategories(cats);
     } catch (error) {
       console.error('Failed to load categories:', error);
     }
-  };
+  }, [boardId]);
 
-  // Update selectedTask when tasks change
+  // Load categories on mount and when boardId changes
   useEffect(() => {
-    if (selectedTask) {
-      const updatedTask = tasks.find(t => t.id === selectedTask.id);
-      if (updatedTask) {
-        setSelectedTask(updatedTask);
-      }
-    }
-  }, [tasks, selectedTask?.id]);
+    loadCategories();
+  }, [loadCategories]);
+
+  // Note: selectedTask syncing removed - parent re-renders with updated task
 
   const backlogTasks = tasks
     .filter(task => task.status === TaskStatus.BACKLOG)
@@ -396,7 +388,6 @@ export function BacklogView({
             }}
             placeholder="Category name (e.g., Critical, Nice to have)"
             className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            autoFocus
           />
           <div className="flex items-center gap-2 mt-3">
             <button
@@ -454,9 +445,7 @@ export function BacklogView({
       {/* Uncategorized Tasks */}
       <div className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700 mb-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-            Uncategorized
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Uncategorized</h3>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500 dark:text-gray-400">
               {uncategorizedTasks.length} {uncategorizedTasks.length === 1 ? 'task' : 'tasks'}
@@ -500,7 +489,7 @@ export function BacklogView({
           </div>
         ) : (
           <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
-            No uncategorized tasks. Click "+ Task" to create one.
+            No uncategorized tasks. Click &quot;+ Task&quot; to create one.
           </p>
         )}
       </div>
