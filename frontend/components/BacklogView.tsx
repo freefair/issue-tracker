@@ -487,70 +487,46 @@ export function BacklogView({
               // Get tasks in source and target categories
               const tasksInSourceCategory = tasksByCategory[sourceGroup] || [];
               const tasksInTargetCategory = tasksByCategory[targetGroup] || [];
-              const newPosition = tasksInTargetCategory.findIndex(t => t.id === movedTask.id);
-              const oldPosition = tasksInSourceCategory.findIndex(t => t.id === movedTask.id);
 
-              // Build array of all updates to execute
+              // Recalculate positions from 0 to avoid negative values
               const updates: Array<{ id: string; updates: Partial<Task> }> = [];
 
-              // 1. Update the moved task
-              const movedTaskUpdates: Partial<Task> = {
-                position: newPosition,
-              };
               if (categoryChanged) {
-                movedTaskUpdates.backlogCategoryId = newCategoryId;
-              }
-              updates.push({ id: movedTask.id, updates: movedTaskUpdates });
+                // Moving between categories - recalculate BOTH
+                // 1. Recalculate source category (remove moved task, close gap)
+                const sourceTasksAfterRemoval = tasksInSourceCategory.filter(
+                  t => t.id !== movedTask.id
+                );
 
-              if (categoryChanged) {
-                // 2a. Close gap in source category
-                tasksInSourceCategory
-                  .filter((t, index) => index > oldPosition)
-                  .forEach((task, index) => {
-                    updates.push({
-                      id: task.id,
-                      updates: { position: oldPosition + index },
-                    });
+                sourceTasksAfterRemoval.forEach((task, index) => {
+                  updates.push({
+                    id: task.id,
+                    updates: { position: index },
                   });
+                });
 
-                // 2b. Make space in target category
-                tasksInTargetCategory
-                  .filter((t, index) => t.id !== movedTask.id && index >= newPosition)
-                  .forEach((task, index) => {
-                    updates.push({
-                      id: task.id,
-                      updates: { position: newPosition + index + 1 },
-                    });
+                // 2. Recalculate target category (insert moved task)
+                const targetTasksWithInserted = [...tasksInTargetCategory];
+                // tasksInTargetCategory already includes the moved task at the new position from UI
+                // So we just need to reindex from 0
+                targetTasksWithInserted.forEach((task, index) => {
+                  const taskUpdates: Partial<Task> = { position: index };
+                  if (task.id === movedTask.id) {
+                    taskUpdates.backlogCategoryId = newCategoryId;
+                  }
+                  updates.push({
+                    id: task.id,
+                    updates: taskUpdates,
                   });
+                });
               } else {
-                // Moving within same category
-                if (oldPosition < newPosition) {
-                  // Moving down: shift tasks between old and new position
-                  tasksInSourceCategory
-                    .filter(
-                      (t, index) =>
-                        index > oldPosition && index <= newPosition && t.id !== movedTask.id
-                    )
-                    .forEach((task, index) => {
-                      updates.push({
-                        id: task.id,
-                        updates: { position: oldPosition + index },
-                      });
-                    });
-                } else if (oldPosition > newPosition) {
-                  // Moving up: shift tasks between new and old position
-                  tasksInSourceCategory
-                    .filter(
-                      (t, index) =>
-                        index >= newPosition && index < oldPosition && t.id !== movedTask.id
-                    )
-                    .forEach((task, index) => {
-                      updates.push({
-                        id: task.id,
-                        updates: { position: newPosition + index + 1 },
-                      });
-                    });
-                }
+                // Moving within same category - recalculate all positions
+                tasksInTargetCategory.forEach((task, index) => {
+                  updates.push({
+                    id: task.id,
+                    updates: { position: index },
+                  });
+                });
               }
 
               // Execute all updates

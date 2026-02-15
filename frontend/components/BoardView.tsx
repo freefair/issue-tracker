@@ -168,61 +168,61 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
       positionChanged,
     });
 
-    // Update all affected tasks' positions
+    // Rebuild positions for affected columns to avoid negative values
     const updates: Array<{ id: string; updates: Partial<Task> }> = [];
 
-    // 1. Update the dragged task
-    updates.push({
-      id: activeTask.id,
-      updates: {
-        status: newStatus,
-        position: newPosition,
-      },
-    });
+    if (activeTask.status === newStatus) {
+      // Moving within same column - recalculate ALL positions in column
+      const allTasksInColumn = tasks
+        .filter(t => t.status === newStatus)
+        .sort((a, b) => a.position - b.position);
 
-    // 2. If position changed within same column, update other tasks
-    if (activeTask.status === newStatus && positionChanged) {
-      // Moving within same column - shift other tasks
-      tasksInColumn.forEach(task => {
-        if (activeTask.position < newPosition) {
-          // Moving down: decrement tasks between old and new position
-          if (task.position > activeTask.position && task.position <= newPosition) {
-            updates.push({
-              id: task.id,
-              updates: { position: task.position - 1 },
-            });
-          }
-        } else {
-          // Moving up: increment tasks between new and old position
-          if (task.position >= newPosition && task.position < activeTask.position) {
-            updates.push({
-              id: task.id,
-              updates: { position: task.position + 1 },
-            });
-          }
+      // Remove the moved task and insert at new position
+      const filteredTasks = allTasksInColumn.filter(t => t.id !== activeTask.id);
+      filteredTasks.splice(newPosition, 0, activeTask);
+
+      // Assign new positions starting from 0
+      filteredTasks.forEach((task, index) => {
+        if (task.position !== index) {
+          updates.push({
+            id: task.id,
+            updates: {
+              position: index,
+              ...(task.id === activeTask.id && { status: newStatus }),
+            },
+          });
         }
       });
-    } else if (statusChanged) {
-      // Moving to different column
-      // 3a. Shift tasks in old column (close the gap)
+    } else {
+      // Moving to different column - recalculate positions in BOTH columns
+      // 1. Recalculate old column (close gap)
       tasks
-        .filter(t => t.status === activeTask.status && t.position > activeTask.position)
-        .forEach(task => {
-          updates.push({
-            id: task.id,
-            updates: { position: task.position - 1 },
-          });
+        .filter(t => t.status === activeTask.status && t.id !== activeTask.id)
+        .sort((a, b) => a.position - b.position)
+        .forEach((task, index) => {
+          if (task.position !== index) {
+            updates.push({
+              id: task.id,
+              updates: { position: index },
+            });
+          }
         });
 
-      // 3b. Shift tasks in new column (make space)
-      tasksInColumn
-        .filter(t => t.position >= newPosition)
-        .forEach(task => {
-          updates.push({
-            id: task.id,
-            updates: { position: task.position + 1 },
-          });
+      // 2. Recalculate new column (with moved task inserted)
+      const tasksInNewColumn = tasks
+        .filter(t => t.status === newStatus)
+        .sort((a, b) => a.position - b.position);
+
+      tasksInNewColumn.splice(newPosition, 0, activeTask);
+      tasksInNewColumn.forEach((task, index) => {
+        updates.push({
+          id: task.id,
+          updates: {
+            position: index,
+            ...(task.id === activeTask.id && { status: newStatus }),
+          },
         });
+      });
     }
 
     // Execute all updates
