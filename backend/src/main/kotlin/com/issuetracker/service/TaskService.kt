@@ -72,11 +72,11 @@ class TaskService(
             ?: throw TaskNotFoundException(id)
 
         val updatedTask = existingTask.copy(
-            title = request.title,
-            description = request.description,
-            status = request.status,
-            position = request.position,
-            tags = request.tags.joinToString(","),
+            title = request.title ?: existingTask.title,
+            description = request.description ?: existingTask.description,
+            status = request.status ?: existingTask.status,
+            position = request.position ?: existingTask.position,
+            tags = request.tags?.joinToString(",") ?: existingTask.tags,
             updatedAt = Instant.now()
         )
 
@@ -130,5 +130,30 @@ class TaskService(
                 task.id?.let { seenIds.add(it) } ?: false
             }
             .map { TaskResponse.from(it) }
+    }
+
+    suspend fun getAllTags(boardId: UUID, query: String? = null): List<String> {
+        logger.debug("Fetching all tags for board: {} with query: {}", boardId, query)
+
+        // Get all tasks for the board
+        val allTags = taskRepository.findByBoardIdOrderByPositionAsc(boardId)
+            .map { task ->
+                // Split tags by comma and trim
+                task.tags.split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+            }
+            .flatMapConcat { flowOf(*it.toTypedArray()) }
+            .toSet()
+            .toList()
+
+        // Filter by query if provided
+        return if (query.isNullOrBlank()) {
+            allTags.sorted()
+        } else {
+            allTags
+                .filter { it.contains(query, ignoreCase = true) }
+                .sorted()
+        }
     }
 }

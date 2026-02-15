@@ -44,7 +44,7 @@ class TaskController(
         return taskService.createTask(boardId, request)
     }
 
-    @PutMapping("/tasks/{id}")
+    @PatchMapping("/tasks/{id}")
     suspend fun updateTask(
         @PathVariable id: UUID,
         @Valid @RequestBody request: UpdateTaskRequest
@@ -72,5 +72,13 @@ class TaskController(
         @RequestParam q: String
     ): Flow<TaskResponse> {
         return taskService.searchTasks(boardId, q)
+    }
+
+    @GetMapping("/boards/{boardId}/tags")
+    suspend fun getTags(
+        @PathVariable boardId: UUID,
+        @RequestParam(required = false) q: String?
+    ): List<String> {
+        return taskService.getAllTags(boardId, q)
     }
 }

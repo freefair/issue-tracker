@@ -28,21 +28,18 @@ data class CreateTaskRequest(
 )
 
 data class UpdateTaskRequest(
-    @field:NotBlank(message = "Task title is required")
     @field:Size(min = 1, max = 500, message = "Title must be between 1 and 500 characters")
-    val title: String,
+    val title: String? = null,
 
     @field:Size(max = 10000, message = "Description must not exceed 10000 characters")
-    val description: String = "",
+    val description: String? = null,
 
-    @field:NotNull(message = "Status is required")
-    val status: TaskStatus,
+    val status: TaskStatus? = null,
 
-    @field:NotNull(message = "Position is required")
     @field:Min(value = 0, message = "Position must be non-negative")
-    val position: Int,
+    val position: Int? = null,
 
-    val tags: List<String> = emptyList()
+    val tags: List<String>? = null
 )
 
 data class MoveTaskRequest(
