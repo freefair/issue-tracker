@@ -54,3 +54,38 @@ jib {
         creationTime.set("USE_CURRENT_TIMESTAMP")
     }
 }
+
+// Frontend build tasks
+val frontendDir = file("${project.rootDir}/frontend")
+val frontendOutDir = file("${frontendDir}/out")
+val staticDir = file("${projectDir}/src/main/resources/static")
+
+tasks.register<Exec>("npmInstall") {
+    group = "frontend"
+    description = "Install frontend dependencies"
+    workingDir = frontendDir
+    commandLine = listOf("npm", "install")
+}
+
+tasks.register<Exec>("buildFrontend") {
+    group = "frontend"
+    description = "Build frontend application"
+    workingDir = frontendDir
+    commandLine = listOf("npm", "run", "build")
+    dependsOn("npmInstall")
+}
+
+tasks.register<Copy>("copyFrontend") {
+    group = "frontend"
+    description = "Copy frontend build to static resources"
+    dependsOn("buildFrontend")
+    from(frontendOutDir)
+    into(staticDir)
+    doFirst {
+        delete(staticDir)
+    }
+}
+
+tasks.named("processResources") {
+    dependsOn("copyFrontend")
+}

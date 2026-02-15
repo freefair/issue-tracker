@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.config.CorsRegistry
 import org.springframework.web.reactive.config.EnableWebFlux
+import org.springframework.web.reactive.config.ResourceHandlerRegistry
 import org.springframework.web.reactive.config.WebFluxConfigurer
 
 @Configuration
@@ -22,5 +23,12 @@ class WebConfig(
             .allowedHeaders(*allowedHeaders.split(",").toTypedArray())
             .allowCredentials(allowCredentials)
             .maxAge(3600)
+    }
+
+    override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
+        // Serve static frontend files
+        registry.addResourceHandler("/**")
+            .addResourceLocations("classpath:/static/")
+            .resourceChain(false)
     }
 }
