@@ -5,6 +5,7 @@ Modern, accessible issue tracking application with Kanban boards, backlog manage
 ## Features
 
 ### Core Functionality
+
 - **Multi-board Support**: Manage multiple projects with independent boards
 - **Kanban Board View**: Visualize workflow with To Do, In Progress, Ready for Deployment, and Done columns
 - **Backlog Management**: Organize tasks with custom categories before moving to the board
@@ -13,6 +14,7 @@ Modern, accessible issue tracking application with Kanban boards, backlog manage
 - **Drag & Drop**: Intuitive task reordering with mouse, touch, and keyboard support
 
 ### Technical Features
+
 - **Feature-Based Architecture**: Clean separation of concerns by business domain
 - **SOLID Principles**: Single Responsibility, Dependency Inversion throughout
 - **Comprehensive Testing**: 161 unit tests with 80%+ coverage
@@ -23,6 +25,7 @@ Modern, accessible issue tracking application with Kanban boards, backlog manage
 ## Tech Stack
 
 ### Frontend
+
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript 5.9 (strict mode)
 - **State Management**: React Context API with custom hooks
@@ -32,6 +35,7 @@ Modern, accessible issue tracking application with Kanban boards, backlog manage
 - **Code Quality**: ESLint 9, Prettier, Husky, lint-staged
 
 ### Backend
+
 - **Framework**: Spring Boot 3.x
 - **Language**: Kotlin
 - **Database**: H2 (development), PostgreSQL (production)
@@ -40,6 +44,7 @@ Modern, accessible issue tracking application with Kanban boards, backlog manage
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - Java 17+
 - npm or yarn
@@ -47,24 +52,29 @@ Modern, accessible issue tracking application with Kanban boards, backlog manage
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd issue-tracker
    ```
 
 2. **Start the backend**
+
    ```bash
    cd backend
    ./gradlew bootRun
    ```
+
    Backend runs on http://localhost:8080
 
 3. **Start the frontend**
+
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
+
    Frontend runs on http://localhost:3000
 
 4. **Run tests**
@@ -77,6 +87,7 @@ Modern, accessible issue tracking application with Kanban boards, backlog manage
 ## Architecture
 
 ### Feature-Based Structure
+
 ```
 frontend/features/
 ├── board-management/     # Boards: CRUD, filtering (44 tests)
@@ -86,10 +97,12 @@ frontend/features/
 ```
 
 Each feature contains ALL related code (not split by type):
+
 - ✅ Components, hooks, services, types, tests together
 - ❌ NOT `/hooks`, `/contexts`, `/components` at root
 
 ### Clean Code & SOLID
+
 - **Single Responsibility**: Each module has one reason to change
 - **No Magic Numbers**: All constants in `app-constants.ts`
 - **DRY**: No code duplication
@@ -98,13 +111,16 @@ Each feature contains ALL related code (not split by type):
 ## Development
 
 ### Pre-commit Hooks
+
 Automatically runs on `git commit`:
+
 - ESLint --fix
-- Prettier --write  
+- Prettier --write
 - TypeScript check
 - Unit tests
 
 ### Search Query Syntax
+
 ```bash
 urgent bug                      # Free text
 Board:ProjectA urgent           # Board-scoped
@@ -115,6 +131,7 @@ Status:TODO high priority       # Status filtering
 ## Testing
 
 **161 tests passing** across all features:
+
 ```bash
 npm test                 # Run all unit tests
 npm run test:coverage    # With coverage report
