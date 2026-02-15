@@ -113,10 +113,14 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
             {isEditing ? (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label
+                    htmlFor="task-description-edit"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
                     Description (GitHub Flavored Markdown)
                   </label>
                   <textarea
+                    id="task-description-edit"
                     value={description}
                     onChange={e => setDescription(e.target.value)}
                     className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono"
@@ -129,15 +133,20 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label
+                    htmlFor="task-tags-edit"
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                  >
                     Tags
                   </label>
-                  <TagInput
-                    boardId={task.boardId}
-                    tags={tags}
-                    onChange={setTags}
-                    placeholder="Add tags..."
-                  />
+                  <div id="task-tags-edit">
+                    <TagInput
+                      boardId={task.boardId}
+                      tags={tags}
+                      onChange={setTags}
+                      placeholder="Add tags..."
+                    />
+                  </div>
                 </div>
               </div>
             ) : (
@@ -185,7 +194,7 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
                           rehypePlugins={[rehypeHighlight]}
                           components={{
                             // Custom checkbox rendering for task lists (GitHub-style)
-                            input: ({ node, ...props }) => {
+                            input: ({ node: _node, ...props }) => {
                               if (props.type === 'checkbox') {
                                 return (
                                   <input
@@ -198,7 +207,7 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
                               return <input {...props} />;
                             },
                             // Style list items with checkboxes (remove bullets)
-                            li: ({ node, children, ...props }) => {
+                            li: ({ node: _node, children, ...props }) => {
                               const hasCheckbox = children?.toString().includes('type="checkbox"');
                               if (hasCheckbox) {
                                 return (

@@ -25,6 +25,7 @@ const STATUS_OPTIONS = [
   { value: 'READY_FOR_DEPLOYMENT', label: 'Ready' },
   { value: 'DONE', label: 'Done' },
 ];
+const SEARCH_DEBOUNCE_MS = 300;
 
 export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: TaskSearchProps) {
   const [chips, setChips] = useState<QueryChip[]>([]);
@@ -139,7 +140,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
     if (shouldSearch) {
       const timer = setTimeout(() => {
         performSearch();
-      }, 300);
+      }, SEARCH_DEBOUNCE_MS);
       return () => clearTimeout(timer);
     } else {
       setResults([]);
