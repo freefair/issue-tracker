@@ -541,12 +541,10 @@ export function BacklogView({
                 tasksInSourceCategory
                   .filter(t => t.id !== movedTask.id)
                   .forEach((task, index) => {
-                    if (task.position !== index) {
-                      updates.push({
-                        id: task.id,
-                        updates: { position: index },
-                      });
-                    }
+                    updates.push({
+                      id: task.id,
+                      updates: { position: index },
+                    });
                   });
 
                 // 2. Insert moved task into target category and reindex all
@@ -563,8 +561,8 @@ export function BacklogView({
                         backlogCategoryId: targetCategoryId,
                       },
                     });
-                  } else if (task.position !== index) {
-                    // Update position for other tasks if needed
+                  } else {
+                    // Update position for other tasks
                     updates.push({
                       id: task.id,
                       updates: { position: index },
@@ -584,22 +582,23 @@ export function BacklogView({
                 reordered.splice(insertIndex, 0, removed);
 
                 reordered.forEach((task, index) => {
-                  if (task.position !== index) {
-                    updates.push({
-                      id: task.id,
-                      updates: { position: index },
-                    });
-                  }
+                  updates.push({
+                    id: task.id,
+                    updates: { position: index },
+                  });
                 });
               }
 
               // Execute backend updates
               // No optimistic UI update here - let parent's optimistic update handle it
+              console.log('Backlog drag end - updates to send:', updates);
               (async () => {
                 try {
                   for (const { id, updates: taskUpdates } of updates) {
+                    console.log('Updating task:', id, taskUpdates);
                     await onUpdateTask(id, taskUpdates);
                   }
+                  console.log('All updates completed');
                 } catch (error) {
                   console.error('Failed to update task positions:', error);
                 }
