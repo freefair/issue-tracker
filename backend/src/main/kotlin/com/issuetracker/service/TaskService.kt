@@ -56,6 +56,7 @@ class TaskService(
             status = request.status,
             position = request.position,
             tags = request.tags.joinToString(","),
+            backlogCategoryId = request.backlogCategoryId,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -77,6 +78,7 @@ class TaskService(
             status = request.status ?: existingTask.status,
             position = request.position ?: existingTask.position,
             tags = request.tags?.joinToString(",") ?: existingTask.tags,
+            backlogCategoryId = request.backlogCategoryId ?: existingTask.backlogCategoryId,
             updatedAt = Instant.now()
         )
 
@@ -123,6 +125,26 @@ class TaskService(
             taskRepository.findByBoardIdAndTitleContainingIgnoreCase(boardId, query),
             taskRepository.findByBoardIdAndDescriptionContainingIgnoreCase(boardId, query),
             taskRepository.findByBoardIdAndTagsContainingIgnoreCase(boardId, query)
+        )
+            .flattenConcat()
+            .filter { task ->
+                // Only emit if we haven't seen this ID before
+                task.id?.let { seenIds.add(it) } ?: false
+            }
+            .map { TaskResponse.from(it) }
+    }
+
+    fun searchTasksGlobally(query: String): Flow<TaskResponse> {
+        logger.debug("Searching tasks globally with query: {}", query)
+
+        // Combine results from title, description, and tags searches across all boards
+        // Use a Set to track unique task IDs and filter duplicates
+        val seenIds = mutableSetOf<UUID>()
+
+        return flowOf(
+            taskRepository.findByTitleContainingIgnoreCase(query),
+            taskRepository.findByDescriptionContainingIgnoreCase(query),
+            taskRepository.findByTagsContainingIgnoreCase(query)
         )
             .flattenConcat()
             .filter { task ->

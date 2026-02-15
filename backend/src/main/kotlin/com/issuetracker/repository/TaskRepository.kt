@@ -14,10 +14,17 @@ interface TaskRepository : CoroutineCrudRepository<Task, UUID> {
 
     fun findByBoardIdAndStatus(boardId: UUID, status: TaskStatus): Flow<Task>
 
-    // Search queries - derived methods
+    // Search queries - derived methods (board-scoped)
     fun findByBoardIdAndTitleContainingIgnoreCase(boardId: UUID, query: String): Flow<Task>
 
     fun findByBoardIdAndDescriptionContainingIgnoreCase(boardId: UUID, query: String): Flow<Task>
 
     fun findByBoardIdAndTagsContainingIgnoreCase(boardId: UUID, query: String): Flow<Task>
+
+    // Global search queries (across all boards)
+    fun findByTitleContainingIgnoreCase(query: String): Flow<Task>
+
+    fun findByDescriptionContainingIgnoreCase(query: String): Flow<Task>
+
+    fun findByTagsContainingIgnoreCase(query: String): Flow<Task>
 }

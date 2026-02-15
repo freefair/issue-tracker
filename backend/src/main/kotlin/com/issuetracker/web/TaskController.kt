@@ -74,6 +74,11 @@ class TaskController(
         return taskService.searchTasks(boardId, q)
     }
 
+    @GetMapping("/tasks/search/global")
+    fun searchTasksGlobally(@RequestParam q: String): Flow<TaskResponse> {
+        return taskService.searchTasksGlobally(q)
+    }
+
     @GetMapping("/boards/{boardId}/tags")
     suspend fun getTags(
         @PathVariable boardId: UUID,
