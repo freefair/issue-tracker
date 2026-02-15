@@ -42,3 +42,9 @@ export const HTTP_STATUS = {
   NOT_FOUND: 404,
   INTERNAL_SERVER_ERROR: 500,
 } as const;
+
+/**
+ * API configuration
+ * Frontend is served from Spring Boot container, so we use relative paths
+ */
+export const API_BASE_URL = '/api';

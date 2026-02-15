@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { API_BASE_URL } from '@/shared/constants/app-constants';
 
 interface TagInputProps {
   boardId: string;
@@ -27,9 +28,8 @@ export function TagInput({ boardId, tags, onChange, placeholder = 'Add tags...' 
       }
 
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
         const response = await fetch(
-          `${API_URL}/boards/${boardId}/tags?q=${encodeURIComponent(input.trim())}`
+          `${API_BASE_URL}/boards/${boardId}/tags?q=${encodeURIComponent(input.trim())}`
         );
         if (response.ok) {
           const allTags = await response.json();

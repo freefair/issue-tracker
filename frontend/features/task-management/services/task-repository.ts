@@ -1,9 +1,12 @@
 import { logger } from '../../../shared/utils/logger';
 import { ApiError } from '../../../core/errors/app-error';
-import { MAX_RETRIES, RETRY_DELAY_MS, HTTP_STATUS } from '../../../shared/constants/app-constants';
+import {
+  MAX_RETRIES,
+  RETRY_DELAY_MS,
+  HTTP_STATUS,
+  API_BASE_URL,
+} from '../../../shared/constants/app-constants';
 import type { Task, CreateTaskRequest, UpdateTaskRequest } from '../types/task.types';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 /**
  * Repository for task data access
