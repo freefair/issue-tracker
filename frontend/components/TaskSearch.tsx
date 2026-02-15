@@ -389,7 +389,23 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleInputKeyDown}
-            onFocus={() => setIsFocused(true)}
+            onFocus={() => {
+              setIsFocused(true);
+              // Re-open results if we have search content
+              const freeTextQuery = inputValue.trim();
+              const hasUserAddedFilters = chips.some(c => c.type === 'tag' || c.type === 'status');
+              const hasTextQuery = freeTextQuery.length >= 2;
+              const shouldShowResults = hasTextQuery || hasUserAddedFilters;
+
+              if (shouldShowResults) {
+                // If we have results, show them; otherwise trigger search
+                if (results.length > 0) {
+                  setIsResultsOpen(true);
+                } else {
+                  performSearch();
+                }
+              }
+            }}
             onBlur={(e) => {
               // Don't blur if clicking within the container (results/suggestions)
               if (!containerRef.current?.contains(e.relatedTarget as Node)) {
