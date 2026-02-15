@@ -15,7 +15,9 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
     throw new Error(`API error: ${response.statusText}`);
   }
 
-  return response.json();
+  // Handle empty responses (e.g., DELETE operations)
+  const text = await response.text();
+  return text ? JSON.parse(text) : ({} as T);
 }
 
 // Board API
@@ -42,11 +44,13 @@ export const taskApi = {
   getById: (id: string) => fetchApi<Task>(`/tasks/${id}`),
   getByStatus: (boardId: string, status: string) =>
     fetchApi<Task[]>(`/boards/${boardId}/tasks/status/${status}`),
-  create: (request: CreateTaskRequest) =>
-    fetchApi<Task>(`/boards/${request.boardId}/tasks`, {
+  create: (request: CreateTaskRequest) => {
+    const { boardId, ...taskData } = request;
+    return fetchApi<Task>(`/boards/${boardId}/tasks`, {
       method: 'POST',
-      body: JSON.stringify(request),
-    }),
+      body: JSON.stringify(taskData),
+    });
+  },
   update: (id: string, request: UpdateTaskRequest) =>
     fetchApi<Task>(`/tasks/${id}`, {
       method: 'PATCH',
