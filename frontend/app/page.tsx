@@ -11,6 +11,7 @@ import { Header } from '@/components/Header';
 import { Sidebar } from '@/components/Sidebar';
 import { CreateBoardModal } from '@/components/CreateBoardModal';
 import { EditBoardModal } from '@/components/EditBoardModal';
+import { TaskModal } from '@/components/TaskModal';
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -20,6 +21,8 @@ function HomeContent() {
   const [boards, setBoards] = useState<Board[]>([]);
   const [currentBoard, setCurrentBoard] = useState<Board | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -63,6 +66,13 @@ function HomeContent() {
     try {
       const data = await taskApi.getAll(boardId);
       setTasks(data);
+
+      // Extract all unique tags from tasks
+      const tagsSet = new Set<string>();
+      data.forEach(task => {
+        task.tags.forEach(tag => tagsSet.add(tag));
+      });
+      setAllTags(Array.from(tagsSet).sort());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks');
     }
@@ -79,7 +89,7 @@ function HomeContent() {
     }
   };
 
-  const handleCreateTask = async (title: string, status: TaskStatus, description?: string) => {
+  const handleCreateTask = async (title: string, status: TaskStatus, description?: string, categoryId?: string) => {
     if (!currentBoard) return;
 
     try {
@@ -93,6 +103,7 @@ function HomeContent() {
         description,
         status,
         position: maxPosition + 1,
+        backlogCategoryId: categoryId,
       });
 
       loadTasks(currentBoard.id);
@@ -207,7 +218,14 @@ function HomeContent() {
         onDeleteBoard={handleDeleteBoard}
       />
       <main className={`flex-1 transition-all duration-200 ${isSidebarOpen ? 'md:ml-60' : 'ml-0'}`}>
-        <Header board={currentBoard} view={view} onViewChange={setView} />
+        <Header
+          board={currentBoard}
+          boards={boards}
+          allTags={allTags}
+          view={view}
+          onViewChange={setView}
+          onTaskSelect={setSelectedTask}
+        />
         {currentBoard && view === 'board' && (
           <BoardView
             board={currentBoard}
@@ -219,6 +237,7 @@ function HomeContent() {
         )}
         {currentBoard && view === 'backlog' && (
           <BacklogView
+            boardId={currentBoard.id}
             tasks={tasks}
             onCreateTask={handleCreateTask}
             onUpdateTask={handleUpdateTask}
@@ -246,6 +265,16 @@ function HomeContent() {
         onClose={() => setBoardToEdit(null)}
         onUpdate={handleEditBoard}
       />
+
+      {selectedTask && (
+        <TaskModal
+          task={selectedTask}
+          isOpen={true}
+          onClose={() => setSelectedTask(null)}
+          onUpdate={handleUpdateTask}
+          onDelete={handleDeleteTask}
+        />
+      )}
     </div>
   );
 }

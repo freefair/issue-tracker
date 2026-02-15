@@ -1,16 +1,20 @@
-import { Board } from '@/types';
+import { Board, Task } from '@/types';
+import { TaskSearch } from './TaskSearch';
 
 interface HeaderProps {
   board: Board | null;
+  boards: Board[];
+  allTags: string[];
   view: 'board' | 'backlog' | 'archive';
   onViewChange: (view: 'board' | 'backlog' | 'archive') => void;
+  onTaskSelect: (task: Task) => void;
 }
 
-export function Header({ board, view, onViewChange }: HeaderProps) {
+export function Header({ board, boards, allTags, view, onViewChange, onTaskSelect }: HeaderProps) {
   return (
     <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
               {board?.name || 'Issue Tracker'}
@@ -56,6 +60,18 @@ export function Header({ board, view, onViewChange }: HeaderProps) {
             </button>
           </div>
         </div>
+
+        {/* Task Search */}
+        {board && (
+          <div className="mt-4">
+            <TaskSearch
+              currentBoardId={board.id}
+              boards={boards}
+              allTags={allTags}
+              onTaskSelect={onTaskSelect}
+            />
+          </div>
+        )}
       </div>
     </header>
   );
