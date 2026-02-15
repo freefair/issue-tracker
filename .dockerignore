@@ -12,7 +12,8 @@ frontend/.eslintcache
 
 # Backend development
 backend/.gradle
-backend/build
+backend/build/*
+!backend/build/libs/
 backend/bin
 backend/.settings
 backend/.classpath

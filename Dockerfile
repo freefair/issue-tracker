@@ -2,7 +2,7 @@
 # Stage 1: Build stage (not used in CI/CD as we build with Gradle externally)
 # Stage 2: Runtime stage
 
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM eclipse-temurin:21-jre-alpine AS runtime
 
 # Add metadata
 LABEL org.opencontainers.image.title="Issue Tracker"
