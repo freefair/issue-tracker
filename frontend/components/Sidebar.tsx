@@ -17,6 +17,13 @@ interface SidebarProps {
 
 export function Sidebar({ boards, currentBoardId, isOpen, onToggle, onCreateBoard, onEditBoard, onDeleteBoard }: SidebarProps) {
   const [boardToDelete, setBoardToDelete] = useState<Board | null>(null);
+  const [boardFilter, setBoardFilter] = useState('');
+
+  // Filter boards by search text
+  const filteredBoards = boards.filter(board =>
+    board.name.toLowerCase().includes(boardFilter.toLowerCase())
+  );
+
   return (
     <>
       {/* Mobile overlay */}
@@ -39,9 +46,33 @@ export function Sidebar({ boards, currentBoardId, isOpen, onToggle, onCreateBoar
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Issue Tracker</h2>
         </div>
 
+        {/* Board Filter */}
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="relative">
+            <input
+              type="text"
+              value={boardFilter}
+              onChange={(e) => setBoardFilter(e.target.value)}
+              placeholder="Filter boards..."
+              className="w-full px-3 py-2 pr-8 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {boardFilter && (
+              <button
+                onClick={() => setBoardFilter('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                title="Clear filter"
+              >
+                <svg className="w-4 h-4" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Board List */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 140px)' }}>
-          {boards.map(board => (
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+          {filteredBoards.map(board => (
             <div key={board.id} className="group relative">
               <Link
                 href={`/?board=${board.id}`}
@@ -106,6 +137,15 @@ export function Sidebar({ boards, currentBoardId, isOpen, onToggle, onCreateBoar
               </div>
             </div>
           ))}
+
+          {/* Empty state */}
+          {filteredBoards.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {boardFilter ? 'No boards found' : 'No boards yet'}
+              </p>
+            </div>
+          )}
         </nav>
 
         {/* Create Board Button */}
