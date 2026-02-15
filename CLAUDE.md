@@ -286,6 +286,84 @@ issue-tracker/
   - Board-scoped: `/api/tasks/search?boardId={id}&q={query}`
   - Global: `/api/tasks/search/global?q={query}`
 
+### Drag & Drop Architecture (@dnd-kit)
+- **Mixed API Usage:**
+  - `BacklogView`: Uses new @dnd-kit/react API (DragDropProvider, useSortable from @dnd-kit/react/sortable)
+  - `BoardView`: Uses old @dnd-kit/sortable API (DndContext, SortableContext)
+  - `TaskCardView`: Pure presentation component (no drag logic)
+  - `TaskCard`: Wrapper using old API for BoardView compatibility
+
+- **Optimistic Updates Pattern:**
+  ```typescript
+  // In page.tsx (parent component)
+  const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
+    // 1. Optimistic UI update - immediate feedback
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId ? { ...task, ...updates } : task
+      )
+    );
+
+    // 2. Backend update
+    try {
+      await taskApi.update(taskId, updates);
+    } catch (err) {
+      // 3. Revert on error
+      loadTasks(currentBoard.id);
+    }
+  };
+  ```
+
+- **BacklogView onDragEnd Pattern:**
+  ```typescript
+  onDragEnd: async (event) => {
+    // Get target from drag data, NOT from task state
+    const targetGroup = target.data?.group || String(target.id);
+    const targetCategoryId = targetGroup === 'uncategorized' ? undefined : targetGroup;
+
+    // Build updates list
+    const updates = [];
+
+    if (categoryChanged) {
+      // 1. Reindex source category (all tasks)
+      sourceTasksWithoutMoved.forEach((task, index) => {
+        updates.push({ id: task.id, updates: { position: index } });
+      });
+
+      // 2. Insert moved task into target and reindex (all tasks)
+      targetWithInserted.forEach((task, index) => {
+        if (task.id === movedTask.id) {
+          // CRITICAL: Update BOTH position AND category
+          updates.push({
+            id: task.id,
+            updates: { position: index, backlogCategoryId: targetCategoryId }
+          });
+        } else {
+          updates.push({ id: task.id, updates: { position: index } });
+        }
+      });
+    }
+
+    // Execute ALL updates (no position checks)
+    for (const { id, updates: taskUpdates } of updates) {
+      await onUpdateTask(id, taskUpdates);
+    }
+  }
+  ```
+
+- **Position Management Rules:**
+  - Always recalculate from 0 (0, 1, 2, 3, ...)
+  - Never use relative adjustments (position - 1, position + 1)
+  - Update ALL affected tasks, not just the moved task
+  - No position checks (`if (task.position !== index)`) - always send updates
+  - Backend validates: position must be >= 0
+
+- **Category Reordering:**
+  - Handle `source.type === 'category'` in onDragEnd
+  - Update all category positions in backend
+  - Use optimistic local state update (`setCategories`)
+  - Reload on error to revert
+
 ## Database Schema Notes
 
 ### Tables
@@ -356,6 +434,22 @@ sleep 8 && curl -s http://localhost:8080/api/boards | jq
 - ⚠️ **Search focus state** - Results only visible when focused
 - ⚠️ **Static export** - Dynamic routes need `generateStaticParams()`
 - ⚠️ **Debounce searches** to avoid excessive API calls
+
+### Drag & Drop (@dnd-kit)
+- ⚠️ **API Mixing** - BacklogView uses @dnd-kit/react (new), BoardView uses @dnd-kit/sortable (old)
+- ⚠️ **Target Group** - Get targetGroup from `target.data.group`, NOT from `targetTask.backlogCategoryId`
+- ⚠️ **Moved Task Updates** - ALWAYS update BOTH position AND backlogCategoryId for moved tasks
+- ⚠️ **Position Recalculation** - Recalculate ALL positions from 0, never use relative adjustments (position - 1)
+- ⚠️ **Update ALL Tasks** - Send updates for ALL affected tasks, don't skip based on position checks
+- ⚠️ **Category Reordering** - Handle both `source.type === 'task'` AND `source.type === 'category'` in onDragEnd
+
+### Optimistic UI Updates
+- ⚠️ **Parent Updates** - Optimistic updates MUST happen in parent (page.tsx), not in child components
+- ⚠️ **useEffect Override** - BacklogView's useEffect overwrites local tasksByCategory state based on tasks prop
+- ⚠️ **No Full Reloads** - Never call loadTasks() after update - use optimistic state updates instead
+- ⚠️ **Error Revert** - Only reload data on error to revert optimistic changes
+- ⚠️ **handleUpdateTask Pattern** - Update state immediately, send to backend, only reload on error
+- ⚠️ **handleDeleteTask Pattern** - Remove from state immediately, send to backend, only reload on error
 
 ### Deployment
 - ⚠️ **Order matters:** Build frontend BEFORE starting backend
