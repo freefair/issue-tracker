@@ -34,6 +34,9 @@ dependencyResolutionManagement {
             // Libraries - Kotlin
             library("kotlin-reflect", "org.jetbrains.kotlin", "kotlin-reflect").withoutVersion()
             library("kotlin-test-junit5", "org.jetbrains.kotlin", "kotlin-test-junit5").withoutVersion()
+            library("kotlinx-coroutines-core", "org.jetbrains.kotlinx", "kotlinx-coroutines-core").withoutVersion()
+            library("kotlinx-coroutines-reactor", "org.jetbrains.kotlinx", "kotlinx-coroutines-reactor").withoutVersion()
+            library("kotlinx-coroutines-test", "org.jetbrains.kotlinx", "kotlinx-coroutines-test").withoutVersion()
 
             // Libraries - Jackson
             library("jackson-module-kotlin", "com.fasterxml.jackson.module", "jackson-module-kotlin").withoutVersion()
@@ -59,7 +62,9 @@ dependencyResolutionManagement {
 
             bundle("kotlin-core", listOf(
                 "kotlin-reflect",
-                "jackson-module-kotlin"
+                "jackson-module-kotlin",
+                "kotlinx-coroutines-core",
+                "kotlinx-coroutines-reactor"
             ))
         }
     }

@@ -5,19 +5,20 @@ import com.issuetracker.dto.CreateBoardRequest
 import com.issuetracker.dto.UpdateBoardRequest
 import com.issuetracker.exception.BoardNotFoundException
 import com.issuetracker.service.BoardService
+import kotlinx.coroutines.flow.flowOf
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.time.Instant
 import java.util.UUID
+import kotlinx.coroutines.runBlocking
 
 @WebFluxTest(BoardController::class)
 @ActiveProfiles("test")
@@ -45,7 +46,7 @@ class BoardControllerTest {
             createdAt = Instant.now()
         )
 
-        given(boardService.getAllBoards()).willReturn(Flux.just(board1, board2))
+        given(boardService.getAllBoards()).willReturn(flowOf(board1, board2))
 
         // When & Then
         webTestClient.get()
@@ -57,7 +58,7 @@ class BoardControllerTest {
     }
 
     @Test
-    fun `should return board by id`() {
+    fun `should return board by id`() = runBlocking {
         // Given
         val boardId = UUID.randomUUID()
         val board = BoardResponse(
@@ -67,7 +68,7 @@ class BoardControllerTest {
             createdAt = Instant.now()
         )
 
-        given(boardService.getBoardById(boardId)).willReturn(Mono.just(board))
+        given(boardService.getBoardById(boardId)).willReturn(board)
 
         // When & Then
         webTestClient.get()
@@ -80,11 +81,11 @@ class BoardControllerTest {
     }
 
     @Test
-    fun `should return 404 when board not found`() {
+    fun `should return 404 when board not found`() = runBlocking {
         // Given
         val boardId = UUID.randomUUID()
         given(boardService.getBoardById(boardId))
-            .willReturn(Mono.error(BoardNotFoundException(boardId)))
+            .willThrow(BoardNotFoundException(boardId))
 
         // When & Then
         webTestClient.get()
@@ -94,7 +95,7 @@ class BoardControllerTest {
     }
 
     @Test
-    fun `should create board`() {
+    fun `should create board`() = runBlocking {
         // Given
         val request = CreateBoardRequest(name = "New Board", description = "Description")
         val createdBoard = BoardResponse(
@@ -104,7 +105,7 @@ class BoardControllerTest {
             createdAt = Instant.now()
         )
 
-        given(boardService.createBoard(request)).willReturn(Mono.just(createdBoard))
+        given(boardService.createBoard(any())).willReturn(createdBoard)
 
         // When & Then
         webTestClient.post()
@@ -132,7 +133,7 @@ class BoardControllerTest {
     }
 
     @Test
-    fun `should update board`() {
+    fun `should update board`() = runBlocking {
         // Given
         val boardId = UUID.randomUUID()
         val request = UpdateBoardRequest(name = "Updated Board", description = "Updated")
@@ -143,7 +144,7 @@ class BoardControllerTest {
             createdAt = Instant.now()
         )
 
-        given(boardService.updateBoard(boardId, request)).willReturn(Mono.just(updatedBoard))
+        given(boardService.updateBoard(any(), any())).willReturn(updatedBoard)
 
         // When & Then
         webTestClient.put()
@@ -157,10 +158,10 @@ class BoardControllerTest {
     }
 
     @Test
-    fun `should delete board`() {
+    fun `should delete board`() = runBlocking {
         // Given
         val boardId = UUID.randomUUID()
-        given(boardService.deleteBoard(boardId)).willReturn(Mono.empty())
+        given(boardService.deleteBoard(boardId)).willAnswer { }
 
         // When & Then
         webTestClient.delete()

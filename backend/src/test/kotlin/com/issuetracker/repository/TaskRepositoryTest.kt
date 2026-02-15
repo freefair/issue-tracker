@@ -3,12 +3,13 @@ package com.issuetracker.repository
 import com.issuetracker.domain.Board
 import com.issuetracker.domain.Task
 import com.issuetracker.domain.TaskStatus
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest
 import org.springframework.test.context.ActiveProfiles
-import reactor.test.StepVerifier
 import java.time.Instant
 
 @DataR2dbcTest
@@ -24,19 +25,19 @@ class TaskRepositoryTest {
     private lateinit var testBoard: Board
 
     @BeforeEach
-    fun setUp() {
+    fun setUp() = runTest {
         // Clean up
-        taskRepository.deleteAll().block()
-        boardRepository.deleteAll().block()
+        taskRepository.deleteAll()
+        boardRepository.deleteAll()
 
         // Create a test board
         testBoard = boardRepository.save(
             Board(name = "Test Board", description = "For testing tasks")
-        ).block()!!
+        )
     }
 
     @Test
-    fun `should save and retrieve task`() {
+    fun `should save and retrieve task`() = runTest {
         // Given
         val task = Task(
             boardId = testBoard.id!!,
@@ -53,86 +54,79 @@ class TaskRepositoryTest {
         val savedTask = taskRepository.save(task)
 
         // Then
-        StepVerifier.create(savedTask)
-            .expectNextMatches { saved ->
-                saved.id != null &&
-                saved.title == "Test Task" &&
-                saved.status == TaskStatus.TODO &&
-                saved.boardId == testBoard.id
-            }
-            .verifyComplete()
+        assert(savedTask.id != null)
+        assert(savedTask.title == "Test Task")
+        assert(savedTask.status == TaskStatus.TODO)
+        assert(savedTask.boardId == testBoard.id)
     }
 
     @Test
-    fun `should find tasks by board id ordered by position`() {
+    fun `should find tasks by board id ordered by position`() = runTest {
         // Given
         taskRepository.save(Task(
             boardId = testBoard.id!!,
             title = "Task 3",
             status = TaskStatus.TODO,
             position = 3
-        )).block()
+        ))
 
         taskRepository.save(Task(
             boardId = testBoard.id!!,
             title = "Task 1",
             status = TaskStatus.TODO,
             position = 1
-        )).block()
+        ))
 
         taskRepository.save(Task(
             boardId = testBoard.id!!,
             title = "Task 2",
             status = TaskStatus.TODO,
             position = 2
-        )).block()
+        ))
 
         // When
-        val tasks = taskRepository.findByBoardIdOrderByPositionAsc(testBoard.id!!)
+        val tasks = taskRepository.findByBoardIdOrderByPositionAsc(testBoard.id!!).toList()
 
         // Then
-        StepVerifier.create(tasks)
-            .expectNextMatches { it.title == "Task 1" }
-            .expectNextMatches { it.title == "Task 2" }
-            .expectNextMatches { it.title == "Task 3" }
-            .verifyComplete()
+        assert(tasks.size == 3)
+        assert(tasks[0].title == "Task 1")
+        assert(tasks[1].title == "Task 2")
+        assert(tasks[2].title == "Task 3")
     }
 
     @Test
-    fun `should find tasks by board id and status`() {
+    fun `should find tasks by board id and status`() = runTest {
         // Given
         taskRepository.save(Task(
             boardId = testBoard.id!!,
             title = "Todo Task",
             status = TaskStatus.TODO,
             position = 1
-        )).block()
+        ))
 
         taskRepository.save(Task(
             boardId = testBoard.id!!,
             title = "In Progress Task",
             status = TaskStatus.IN_PROGRESS,
             position = 2
-        )).block()
+        ))
 
         taskRepository.save(Task(
             boardId = testBoard.id!!,
             title = "Another Todo",
             status = TaskStatus.TODO,
             position = 3
-        )).block()
+        ))
 
         // When
-        val todoTasks = taskRepository.findByBoardIdAndStatus(testBoard.id!!, TaskStatus.TODO)
+        val todoTasks = taskRepository.findByBoardIdAndStatus(testBoard.id!!, TaskStatus.TODO).toList()
 
         // Then
-        StepVerifier.create(todoTasks)
-            .expectNextCount(2)
-            .verifyComplete()
+        assert(todoTasks.size == 2)
     }
 
     @Test
-    fun `should search tasks by query`() {
+    fun `should search tasks by query`() = runTest {
         // Given
         taskRepository.save(Task(
             boardId = testBoard.id!!,
@@ -141,7 +135,7 @@ class TaskRepositoryTest {
             status = TaskStatus.TODO,
             position = 1,
             tags = "security,backend"
-        )).block()
+        ))
 
         taskRepository.save(Task(
             boardId = testBoard.id!!,
@@ -150,7 +144,7 @@ class TaskRepositoryTest {
             status = TaskStatus.TODO,
             position = 2,
             tags = "frontend,bug"
-        )).block()
+        ))
 
         taskRepository.save(Task(
             boardId = testBoard.id!!,
@@ -159,19 +153,18 @@ class TaskRepositoryTest {
             status = TaskStatus.TODO,
             position = 3,
             tags = "docs"
-        )).block()
+        ))
 
         // When - search by title
-        val searchResults = taskRepository.searchByBoardId(testBoard.id!!, "authentication")
+        val searchResults = taskRepository.searchByBoardId(testBoard.id!!, "authentication").toList()
 
         // Then
-        StepVerifier.create(searchResults)
-            .expectNextMatches { it.title == "Implement authentication" }
-            .verifyComplete()
+        assert(searchResults.size == 1)
+        assert(searchResults[0].title == "Implement authentication")
     }
 
     @Test
-    fun `should search tasks by description`() {
+    fun `should search tasks by description`() = runTest {
         // Given
         taskRepository.save(Task(
             boardId = testBoard.id!!,
@@ -179,19 +172,17 @@ class TaskRepositoryTest {
             description = "Contains special keyword reactor",
             status = TaskStatus.TODO,
             position = 1
-        )).block()
+        ))
 
         // When
-        val searchResults = taskRepository.searchByBoardId(testBoard.id!!, "reactor")
+        val searchResults = taskRepository.searchByBoardId(testBoard.id!!, "reactor").toList()
 
         // Then
-        StepVerifier.create(searchResults)
-            .expectNextCount(1)
-            .verifyComplete()
+        assert(searchResults.size == 1)
     }
 
     @Test
-    fun `should search tasks by tags`() {
+    fun `should search tasks by tags`() = runTest {
         // Given
         taskRepository.save(Task(
             boardId = testBoard.id!!,
@@ -199,15 +190,13 @@ class TaskRepositoryTest {
             status = TaskStatus.TODO,
             position = 1,
             tags = "kotlin,spring,backend"
-        )).block()
+        ))
 
         // When
-        val searchResults = taskRepository.searchByBoardId(testBoard.id!!, "kotlin")
+        val searchResults = taskRepository.searchByBoardId(testBoard.id!!, "kotlin").toList()
 
         // Then
-        StepVerifier.create(searchResults)
-            .expectNextCount(1)
-            .verifyComplete()
+        assert(searchResults.size == 1)
     }
 
     @Test

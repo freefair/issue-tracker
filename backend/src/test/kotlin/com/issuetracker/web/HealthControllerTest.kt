@@ -20,8 +20,8 @@ class HealthControllerTest {
             .exchange()
             .expectStatus().isOk
             .expectBody()
-            .jsonPath("$.message").isEqualTo("Issue Tracker API - Reactive")
+            .jsonPath("$.message").isEqualTo("Issue Tracker API - Reactive with Kotlin Coroutines")
             .jsonPath("$.status").isEqualTo("running")
-            .jsonPath("$.stack").isEqualTo("WebFlux + R2DBC")
+            .jsonPath("$.stack").isEqualTo("WebFlux + R2DBC + Coroutines")
     }
 }

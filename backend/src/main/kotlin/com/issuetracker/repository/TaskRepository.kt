@@ -2,18 +2,18 @@ package com.issuetracker.repository
 
 import com.issuetracker.domain.Task
 import com.issuetracker.domain.TaskStatus
+import kotlinx.coroutines.flow.Flow
 import org.springframework.data.r2dbc.repository.Query
-import org.springframework.data.repository.reactive.ReactiveCrudRepository
+import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import org.springframework.stereotype.Repository
-import reactor.core.publisher.Flux
 import java.util.UUID
 
 @Repository
-interface TaskRepository : ReactiveCrudRepository<Task, UUID> {
+interface TaskRepository : CoroutineCrudRepository<Task, UUID> {
 
-    fun findByBoardIdOrderByPositionAsc(boardId: UUID): Flux<Task>
+    fun findByBoardIdOrderByPositionAsc(boardId: UUID): Flow<Task>
 
-    fun findByBoardIdAndStatus(boardId: UUID, status: TaskStatus): Flux<Task>
+    fun findByBoardIdAndStatus(boardId: UUID, status: TaskStatus): Flow<Task>
 
     @Query("""
         SELECT * FROM tasks
@@ -23,5 +23,5 @@ interface TaskRepository : ReactiveCrudRepository<Task, UUID> {
              OR LOWER(tags) LIKE LOWER(CONCAT('%', :query, '%')))
         ORDER BY position ASC
     """)
-    fun searchByBoardId(boardId: UUID, query: String): Flux<Task>
+    fun searchByBoardId(boardId: UUID, query: String): Flow<Task>
 }

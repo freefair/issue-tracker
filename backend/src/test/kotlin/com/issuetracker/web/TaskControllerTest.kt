@@ -7,16 +7,17 @@ import com.issuetracker.dto.TaskResponse
 import com.issuetracker.dto.UpdateTaskRequest
 import com.issuetracker.exception.TaskNotFoundException
 import com.issuetracker.service.TaskService
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
+import org.mockito.kotlin.any
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.time.Instant
 import java.util.UUID
 
@@ -46,7 +47,7 @@ class TaskControllerTest {
             updatedAt = Instant.now()
         )
 
-        given(taskService.getTasksByBoard(boardId)).willReturn(Flux.just(task1))
+        given(taskService.getTasksByBoard(boardId)).willReturn(flowOf(task1))
 
         // When & Then
         webTestClient.get()
@@ -74,7 +75,7 @@ class TaskControllerTest {
         )
 
         given(taskService.getTasksByBoardAndStatus(boardId, TaskStatus.TODO))
-            .willReturn(Flux.just(task))
+            .willReturn(flowOf(task))
 
         // When & Then
         webTestClient.get()
@@ -86,7 +87,7 @@ class TaskControllerTest {
     }
 
     @Test
-    fun `should get task by id`() {
+    fun `should get task by id`() = runBlocking {
         // Given
         val taskId = UUID.randomUUID()
         val task = TaskResponse(
@@ -101,7 +102,7 @@ class TaskControllerTest {
             updatedAt = Instant.now()
         )
 
-        given(taskService.getTaskById(taskId)).willReturn(Mono.just(task))
+        given(taskService.getTaskById(taskId)).willReturn(task)
 
         // When & Then
         webTestClient.get()
@@ -114,11 +115,11 @@ class TaskControllerTest {
     }
 
     @Test
-    fun `should return 404 when task not found`() {
+    fun `should return 404 when task not found`() = runBlocking {
         // Given
         val taskId = UUID.randomUUID()
         given(taskService.getTaskById(taskId))
-            .willReturn(Mono.error(TaskNotFoundException(taskId)))
+            .willThrow(TaskNotFoundException(taskId))
 
         // When & Then
         webTestClient.get()
@@ -128,7 +129,7 @@ class TaskControllerTest {
     }
 
     @Test
-    fun `should create task`() {
+    fun `should create task`() = runBlocking {
         // Given
         val boardId = UUID.randomUUID()
         val request = CreateTaskRequest(
@@ -150,7 +151,7 @@ class TaskControllerTest {
             updatedAt = Instant.now()
         )
 
-        given(taskService.createTask(boardId, request)).willReturn(Mono.just(createdTask))
+        given(taskService.createTask(any(), any())).willReturn(createdTask)
 
         // When & Then
         webTestClient.post()
@@ -164,7 +165,7 @@ class TaskControllerTest {
     }
 
     @Test
-    fun `should update task`() {
+    fun `should update task`() = runBlocking {
         // Given
         val taskId = UUID.randomUUID()
         val request = UpdateTaskRequest(
@@ -186,7 +187,7 @@ class TaskControllerTest {
             updatedAt = Instant.now()
         )
 
-        given(taskService.updateTask(taskId, request)).willReturn(Mono.just(updatedTask))
+        given(taskService.updateTask(any(), any())).willReturn(updatedTask)
 
         // When & Then
         webTestClient.put()
@@ -200,7 +201,7 @@ class TaskControllerTest {
     }
 
     @Test
-    fun `should move task`() {
+    fun `should move task`() = runBlocking {
         // Given
         val taskId = UUID.randomUUID()
         val request = MoveTaskRequest(status = TaskStatus.DONE, position = 5)
@@ -216,7 +217,7 @@ class TaskControllerTest {
             updatedAt = Instant.now()
         )
 
-        given(taskService.moveTask(taskId, request)).willReturn(Mono.just(movedTask))
+        given(taskService.moveTask(any(), any())).willReturn(movedTask)
 
         // When & Then
         webTestClient.patch()
@@ -231,10 +232,10 @@ class TaskControllerTest {
     }
 
     @Test
-    fun `should delete task`() {
+    fun `should delete task`() = runBlocking {
         // Given
         val taskId = UUID.randomUUID()
-        given(taskService.deleteTask(taskId)).willReturn(Mono.empty())
+        given(taskService.deleteTask(taskId)).willAnswer { }
 
         // When & Then
         webTestClient.delete()
@@ -259,7 +260,7 @@ class TaskControllerTest {
             updatedAt = Instant.now()
         )
 
-        given(taskService.searchTasks(boardId, "auth")).willReturn(Flux.just(task))
+        given(taskService.searchTasks(boardId, "auth")).willReturn(flowOf(task))
 
         // When & Then
         webTestClient.get()

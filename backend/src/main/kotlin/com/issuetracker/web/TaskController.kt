@@ -7,10 +7,9 @@ import com.issuetracker.dto.TaskResponse
 import com.issuetracker.dto.UpdateTaskRequest
 import com.issuetracker.service.TaskService
 import jakarta.validation.Valid
+import kotlinx.coroutines.flow.Flow
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.util.UUID
 
 @RestController
@@ -23,7 +22,7 @@ class TaskController(
     fun getTasksByBoard(
         @PathVariable boardId: UUID,
         @RequestParam(required = false) status: TaskStatus?
-    ): Flux<TaskResponse> {
+    ): Flow<TaskResponse> {
         return if (status != null) {
             taskService.getTasksByBoardAndStatus(boardId, status)
         } else {
@@ -32,46 +31,46 @@ class TaskController(
     }
 
     @GetMapping("/tasks/{id}")
-    fun getTaskById(@PathVariable id: UUID): Mono<TaskResponse> {
+    suspend fun getTaskById(@PathVariable id: UUID): TaskResponse {
         return taskService.getTaskById(id)
     }
 
     @PostMapping("/boards/{boardId}/tasks")
     @ResponseStatus(HttpStatus.CREATED)
-    fun createTask(
+    suspend fun createTask(
         @PathVariable boardId: UUID,
         @Valid @RequestBody request: CreateTaskRequest
-    ): Mono<TaskResponse> {
+    ): TaskResponse {
         return taskService.createTask(boardId, request)
     }
 
     @PutMapping("/tasks/{id}")
-    fun updateTask(
+    suspend fun updateTask(
         @PathVariable id: UUID,
         @Valid @RequestBody request: UpdateTaskRequest
-    ): Mono<TaskResponse> {
+    ): TaskResponse {
         return taskService.updateTask(id, request)
     }
 
     @PatchMapping("/tasks/{id}/move")
-    fun moveTask(
+    suspend fun moveTask(
         @PathVariable id: UUID,
         @Valid @RequestBody request: MoveTaskRequest
-    ): Mono<TaskResponse> {
+    ): TaskResponse {
         return taskService.moveTask(id, request)
     }
 
     @DeleteMapping("/tasks/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun deleteTask(@PathVariable id: UUID): Mono<Void> {
-        return taskService.deleteTask(id)
+    suspend fun deleteTask(@PathVariable id: UUID) {
+        taskService.deleteTask(id)
     }
 
     @GetMapping("/tasks/search")
     fun searchTasks(
         @RequestParam boardId: UUID,
         @RequestParam q: String
-    ): Flux<TaskResponse> {
+    ): Flow<TaskResponse> {
         return taskService.searchTasks(boardId, q)
     }
 }
