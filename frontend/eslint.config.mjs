@@ -74,6 +74,22 @@ export default [
     },
   },
   {
+    files: ['cypress/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        cy: 'readonly',
+        Cypress: 'readonly',
+        expect: 'readonly',
+        assert: 'readonly',
+        chai: 'readonly',
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-namespace': 'off',
+      'no-undef': 'off',
+    },
+  },
+  {
     ignores: [
       'node_modules/',
       '.next/',
@@ -82,6 +98,7 @@ export default [
       'build/',
       'coverage/',
       '*.config.{js,mjs,ts}',
+      'vitest.setup.ts',
     ],
   },
 ];
