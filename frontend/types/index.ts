@@ -21,6 +21,7 @@ export enum TaskStatus {
   BACKLOG = 'BACKLOG',
   TODO = 'TODO',
   IN_PROGRESS = 'IN_PROGRESS',
+  READY_FOR_DEPLOYMENT = 'READY_FOR_DEPLOYMENT',
   DONE = 'DONE',
 }
 
