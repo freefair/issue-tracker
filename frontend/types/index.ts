@@ -13,6 +13,7 @@ export interface Task {
   status: TaskStatus;
   position: number;
   tags: string[];
+  backlogCategoryId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,6 +33,7 @@ export interface CreateTaskRequest {
   status?: TaskStatus;
   position?: number;
   tags?: string[];
+  backlogCategoryId?: string;
 }
 
 export interface UpdateTaskRequest {
@@ -40,4 +42,24 @@ export interface UpdateTaskRequest {
   status?: TaskStatus;
   position?: number;
   tags?: string[];
+  backlogCategoryId?: string;
+}
+
+export interface BacklogCategory {
+  id: string;
+  boardId: string;
+  name: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBacklogCategoryRequest {
+  name: string;
+  position?: number;
+}
+
+export interface UpdateBacklogCategoryRequest {
+  name?: string;
+  position?: number;
 }

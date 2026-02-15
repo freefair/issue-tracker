@@ -15,6 +15,7 @@ data class Task(
     val status: TaskStatus,
     val position: Int,
     val tags: String = "", // Comma-separated tags for simplicity with R2DBC
+    val backlogCategoryId: UUID? = null,
     val createdAt: Instant = Instant.now(),
     val updatedAt: Instant = Instant.now()
 ) {

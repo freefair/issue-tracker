@@ -24,7 +24,9 @@ data class CreateTaskRequest(
     @field:Min(value = 0, message = "Position must be non-negative")
     val position: Int,
 
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+
+    val backlogCategoryId: UUID? = null
 )
 
 data class UpdateTaskRequest(
@@ -39,7 +41,9 @@ data class UpdateTaskRequest(
     @field:Min(value = 0, message = "Position must be non-negative")
     val position: Int? = null,
 
-    val tags: List<String>? = null
+    val tags: List<String>? = null,
+
+    val backlogCategoryId: UUID? = null
 )
 
 data class MoveTaskRequest(
@@ -59,6 +63,7 @@ data class TaskResponse(
     val status: TaskStatus,
     val position: Int,
     val tags: List<String>,
+    val backlogCategoryId: UUID?,
     val createdAt: Instant,
     val updatedAt: Instant
 ) {
@@ -72,6 +77,7 @@ data class TaskResponse(
                 status = task.status,
                 position = task.position,
                 tags = task.getTagList(),
+                backlogCategoryId = task.backlogCategoryId,
                 createdAt = task.createdAt,
                 updatedAt = task.updatedAt
             )
