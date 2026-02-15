@@ -42,12 +42,9 @@ class BacklogCategoryService(
             ?: throw BoardNotFoundException(boardId)
 
         val category = BacklogCategory(
-            id = UUID.randomUUID(),
             boardId = boardId,
             name = request.name,
-            position = request.position,
-            createdAt = Instant.now(),
-            updatedAt = Instant.now()
+            position = request.position
         )
 
         val savedCategory = categoryRepository.save(category)

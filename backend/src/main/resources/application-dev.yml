@@ -1,16 +1,22 @@
 spring:
   r2dbc:
-    url: r2dbc:h2:file:///./data/issuetracker
-    username: sa
-    password:
+    url: r2dbc:postgresql://localhost:5432/issuetracker
+    username: postgres
+    password: postgres
+    pool:
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+      validation-query: SELECT 1
 
   flyway:
     enabled: true
-    url: jdbc:h2:file:./data/issuetracker
-    user: sa
-    password:
+    url: jdbc:postgresql://localhost:5432/issuetracker
+    user: postgres
+    password: postgres
     baseline-on-migrate: true
     locations: classpath:db/migration
+    validate-on-migrate: true
 
 # CORS configuration for local development
 cors:

@@ -50,16 +50,13 @@ class TaskService(
             ?: throw BoardNotFoundException(boardId)
 
         val task = Task(
-            id = UUID.randomUUID(),
             boardId = boardId,
             title = request.title,
             description = request.description,
             status = request.status,
             position = request.position,
             tags = request.tags.joinToString(","),
-            backlogCategoryId = request.backlogCategoryId,
-            createdAt = Instant.now(),
-            updatedAt = Instant.now()
+            backlogCategoryId = request.backlogCategoryId
         )
 
         val savedTask = taskRepository.save(task)

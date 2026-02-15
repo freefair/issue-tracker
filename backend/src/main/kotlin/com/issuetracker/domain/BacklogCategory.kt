@@ -14,8 +14,8 @@ data class BacklogCategory(
     val boardId: UUID,
     val name: String,
     val position: Int,
-    val createdAt: Instant,
-    val updatedAt: Instant
+    val createdAt: Instant = Instant.now(),
+    val updatedAt: Instant = Instant.now()
 ) : Persistable<UUID> {
 
     @Transient
