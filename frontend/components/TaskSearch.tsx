@@ -35,6 +35,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,11 +54,26 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         inputRef.current?.focus();
+        setIsFocused(true);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsFocused(false);
+        setIsResultsOpen(false);
+        setIsSuggestionsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Handle input changes and show suggestions
@@ -110,9 +126,14 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
 
   // Debounced search
   useEffect(() => {
-    const hasSearchableContent = chips.length > 0 || inputValue.trim().length >= 2;
+    const freeTextQuery = inputValue.trim();
+    const hasUserAddedFilters = chips.some(c => c.type === 'tag' || c.type === 'status');
+    const hasTextQuery = freeTextQuery.length >= 2;
 
-    if (hasSearchableContent) {
+    // Only search if user has typed something OR added filter chips (tag/status)
+    const shouldSearch = hasTextQuery || hasUserAddedFilters;
+
+    if (shouldSearch) {
       const timer = setTimeout(() => {
         performSearch();
       }, 300);
@@ -368,6 +389,13 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleInputKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={(e) => {
+              // Don't blur if clicking within the container (results/suggestions)
+              if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+                setIsFocused(false);
+              }
+            }}
             placeholder={chips.length === 0 ? "Search tasks... (⌘K)" : ""}
             className="flex-1 min-w-[120px] bg-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none"
           />
@@ -385,7 +413,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
       </div>
 
       {/* Suggestions Dropdown */}
-      {isSuggestionsOpen && suggestions.length > 0 && (
+      {isFocused && isSuggestionsOpen && suggestions.length > 0 && (
         <div className="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
           {suggestions.map((suggestion, index) => (
             <button
@@ -404,7 +432,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
       )}
 
       {/* Results Dropdown */}
-      {isResultsOpen && !isSuggestionsOpen && (
+      {isFocused && isResultsOpen && !isSuggestionsOpen && (
         <div className="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
           {results.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
