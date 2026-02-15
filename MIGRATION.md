@@ -1,5 +1,49 @@
 # Migration Guide
 
+## UUID Generation Fix (v0.3.1)
+
+### Problem
+
+Die Services haben manuell UUIDs generiert (`UUID.randomUUID()`), was dazu führte, dass Spring Data R2DBC die Entities als **existierend** betrachtete und ein UPDATE statt INSERT versuchte.
+
+**Fehler:**
+```
+TransientDataAccessResourceException: Failed to update table [boards];
+Row with Id [...] does not exist
+```
+
+### Lösung
+
+✅ **Implementiert:**
+- Manuelle UUID-Generierung in allen Services entfernt
+- Datenbank generiert UUIDs mit `DEFAULT gen_random_uuid()`
+- V3 Migration aktualisiert: `id UUID DEFAULT gen_random_uuid() PRIMARY KEY`
+
+### Migration erforderlich
+
+Da V3 Migration geändert wurde, **muss die Datenbank neu erstellt werden:**
+
+**Development (PostgreSQL):**
+```bash
+# PostgreSQL Datenbank neu erstellen
+psql -U postgres
+DROP DATABASE IF EXISTS issuetracker;
+CREATE DATABASE issuetracker;
+\q
+
+# Oder Flyway Repair
+./gradlew :backend:flywayRepair
+```
+
+**Development (H2 - deprecated):**
+```bash
+rm -rf backend/data/
+```
+
+**Tests:** ✅ Keine Aktion erforderlich (Embedded PostgreSQL erstellt frische DB bei jedem Test)
+
+---
+
 ## Upgrade to Gradle 9.3.1 / Flyway 11
 
 Nach dem Update auf Gradle 9.3.1 und Flyway 11.1.0 kann es zu Flyway-Checksum-Fehlern kommen, wenn eine **bestehende lokale Datenbank** existiert.

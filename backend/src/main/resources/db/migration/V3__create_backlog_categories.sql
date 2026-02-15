@@ -1,5 +1,5 @@
 CREATE TABLE backlog_categories (
-    id UUID PRIMARY KEY,
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     board_id UUID NOT NULL,
     name VARCHAR(255) NOT NULL,
     position INT NOT NULL DEFAULT 0,
