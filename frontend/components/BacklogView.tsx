@@ -458,6 +458,47 @@ export function BacklogView({
             // After successful drag, update backend
             const { source, target } = event.operation;
 
+            // Handle category reordering
+            if (source && target && source.type === 'category') {
+              const sourceCategoryId = String(source.id);
+              const targetCategoryId = String(target.id);
+
+              if (sourceCategoryId === targetCategoryId) return;
+
+              // Find current positions
+              const sourceIndex = categories.findIndex(c => c.id === sourceCategoryId);
+              const targetIndex = categories.findIndex(c => c.id === targetCategoryId);
+
+              if (sourceIndex === -1 || targetIndex === -1) return;
+
+              // Reorder categories
+              const reordered = [...categories];
+              const [movedCategory] = reordered.splice(sourceIndex, 1);
+              reordered.splice(targetIndex, 0, movedCategory);
+
+              // Update local state immediately
+              setCategories(reordered);
+
+              // Update positions in backend
+              (async () => {
+                try {
+                  for (let i = 0; i < reordered.length; i++) {
+                    const category = reordered[i];
+                    if (category.position !== i) {
+                      await backlogCategoryApi.update(category.id, { position: i });
+                    }
+                  }
+                } catch (error) {
+                  console.error('Failed to update category positions:', error);
+                  // Reload categories on error
+                  loadCategories();
+                }
+              })();
+
+              return;
+            }
+
+            // Handle task reordering
             if (source && target && source.type === 'task') {
               // Get source and target groups from the drag data
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -565,7 +606,7 @@ export function BacklogView({
               })();
             }
           },
-          [tasksByCategory, onUpdateTask]
+          [tasksByCategory, onUpdateTask, categories, loadCategories]
         )}
       >
         <div className="space-y-4">
