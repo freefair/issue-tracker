@@ -32,3 +32,13 @@ export const MIN_SEARCH_QUERY_LENGTH = 2;
 export const MIN_TOUCH_TARGET_SIZE = 44; // px, accessibility requirement
 export const MAX_RETRIES = 3;
 export const RETRY_DELAY_MS = 1000;
+
+/**
+ * HTTP status codes
+ */
+export const HTTP_STATUS = {
+  BAD_REQUEST: 400,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  INTERNAL_SERVER_ERROR: 500,
+} as const;
