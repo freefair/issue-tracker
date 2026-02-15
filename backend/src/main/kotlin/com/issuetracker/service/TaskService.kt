@@ -10,8 +10,7 @@ import com.issuetracker.exception.BoardNotFoundException
 import com.issuetracker.exception.TaskNotFoundException
 import com.issuetracker.repository.BoardRepository
 import com.issuetracker.repository.TaskRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -115,7 +114,21 @@ class TaskService(
 
     fun searchTasks(boardId: UUID, query: String): Flow<TaskResponse> {
         logger.debug("Searching tasks in board: {} with query: {}", boardId, query)
-        return taskRepository.searchByBoardId(boardId, query)
+
+        // Combine results from title, description, and tags searches
+        // Use a Set to track unique task IDs and filter duplicates
+        val seenIds = mutableSetOf<UUID>()
+
+        return flowOf(
+            taskRepository.findByBoardIdAndTitleContainingIgnoreCase(boardId, query),
+            taskRepository.findByBoardIdAndDescriptionContainingIgnoreCase(boardId, query),
+            taskRepository.findByBoardIdAndTagsContainingIgnoreCase(boardId, query)
+        )
+            .flattenConcat()
+            .filter { task ->
+                // Only emit if we haven't seen this ID before
+                task.id?.let { seenIds.add(it) } ?: false
+            }
             .map { TaskResponse.from(it) }
     }
 }

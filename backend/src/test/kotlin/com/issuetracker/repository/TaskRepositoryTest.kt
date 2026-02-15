@@ -126,7 +126,7 @@ class TaskRepositoryTest {
     }
 
     @Test
-    fun `should search tasks by query`() = runTest {
+    fun `should search tasks by title`() = runTest {
         // Given
         taskRepository.save(Task(
             boardId = testBoard.id!!,
@@ -146,17 +146,10 @@ class TaskRepositoryTest {
             tags = "frontend,bug"
         ))
 
-        taskRepository.save(Task(
-            boardId = testBoard.id!!,
-            title = "Update documentation",
-            description = "Add API docs",
-            status = TaskStatus.TODO,
-            position = 3,
-            tags = "docs"
-        ))
-
-        // When - search by title
-        val searchResults = taskRepository.searchByBoardId(testBoard.id!!, "authentication").toList()
+        // When
+        val searchResults = taskRepository
+            .findByBoardIdAndTitleContainingIgnoreCase(testBoard.id!!, "authentication")
+            .toList()
 
         // Then
         assert(searchResults.size == 1)
@@ -174,11 +167,22 @@ class TaskRepositoryTest {
             position = 1
         ))
 
+        taskRepository.save(Task(
+            boardId = testBoard.id!!,
+            title = "Task 2",
+            description = "Something else",
+            status = TaskStatus.TODO,
+            position = 2
+        ))
+
         // When
-        val searchResults = taskRepository.searchByBoardId(testBoard.id!!, "reactor").toList()
+        val searchResults = taskRepository
+            .findByBoardIdAndDescriptionContainingIgnoreCase(testBoard.id!!, "reactor")
+            .toList()
 
         // Then
         assert(searchResults.size == 1)
+        assert(searchResults[0].title == "Task 1")
     }
 
     @Test
@@ -192,11 +196,47 @@ class TaskRepositoryTest {
             tags = "kotlin,spring,backend"
         ))
 
+        taskRepository.save(Task(
+            boardId = testBoard.id!!,
+            title = "Frontend Task",
+            status = TaskStatus.TODO,
+            position = 2,
+            tags = "react,typescript"
+        ))
+
         // When
-        val searchResults = taskRepository.searchByBoardId(testBoard.id!!, "kotlin").toList()
+        val searchResults = taskRepository
+            .findByBoardIdAndTagsContainingIgnoreCase(testBoard.id!!, "kotlin")
+            .toList()
 
         // Then
         assert(searchResults.size == 1)
+        assert(searchResults[0].title == "Backend Task")
+    }
+
+    @Test
+    fun `should handle case insensitive search`() = runTest {
+        // Given
+        taskRepository.save(Task(
+            boardId = testBoard.id!!,
+            title = "UPPERCASE TASK",
+            description = "lowercase description",
+            status = TaskStatus.TODO,
+            position = 1
+        ))
+
+        // When - search with different case
+        val titleResults = taskRepository
+            .findByBoardIdAndTitleContainingIgnoreCase(testBoard.id!!, "uppercase")
+            .toList()
+
+        val descResults = taskRepository
+            .findByBoardIdAndDescriptionContainingIgnoreCase(testBoard.id!!, "LOWERCASE")
+            .toList()
+
+        // Then
+        assert(titleResults.size == 1)
+        assert(descResults.size == 1)
     }
 
     @Test
