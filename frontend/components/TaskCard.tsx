@@ -10,6 +10,7 @@ interface TaskCardProps {
   onDelete: (taskId: string) => void;
   onClick?: () => void;
   isDragging?: boolean;
+  disableSortable?: boolean; // NEW: Disable sortable for new API usage
   actionButton?: {
     label: string;
     onClick: () => void;
@@ -23,46 +24,51 @@ export function TaskCard({
   onDelete: _onDelete,
   onClick,
   isDragging = false,
+  disableSortable = false,
   actionButton,
 }: TaskCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: isSortableDragging,
-  } = useSortable({ id: task.id });
+  // Only use sortable if not disabled (for old API compatibility)
+  const sortable = useSortable({ id: task.id, disabled: disableSortable });
 
   const DRAGGING_OPACITY = 0.5;
   const MAX_VISIBLE_TAGS = 3;
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isSortableDragging ? DRAGGING_OPACITY : 1,
-  };
+  const style = disableSortable
+    ? { opacity: isDragging ? DRAGGING_OPACITY : 1 }
+    : {
+        transform: CSS.Transform.toString(sortable.transform),
+        transition: sortable.transition,
+        opacity: sortable.isDragging ? DRAGGING_OPACITY : 1,
+      };
 
   const handleClick = (_e: React.MouseEvent) => {
     // Only open modal if not dragging
-    if (!isSortableDragging && !isDragging && onClick) {
+    const isCurrentlyDragging = disableSortable ? isDragging : sortable.isDragging;
+    if (!isCurrentlyDragging && onClick) {
       onClick();
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if ((e.key === 'Enter' || e.key === ' ') && !isSortableDragging && !isDragging && onClick) {
+    const isCurrentlyDragging = disableSortable ? isDragging : sortable.isDragging;
+    if ((e.key === 'Enter' || e.key === ' ') && !isCurrentlyDragging && onClick) {
       e.preventDefault();
       onClick();
     }
   };
 
+  const divProps = disableSortable
+    ? {}
+    : {
+        ref: sortable.setNodeRef,
+        ...sortable.attributes,
+        ...sortable.listeners,
+      };
+
   return (
     <div
-      ref={setNodeRef}
+      {...divProps}
       style={style}
-      {...attributes}
-      {...listeners}
       className={`bg-white dark:bg-gray-700 rounded-xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-200 dark:border-gray-600 group relative ${
         isDragging ? 'shadow-xl' : ''
       }`}
@@ -87,12 +93,14 @@ export function TaskCard({
       )}
 
       <div className="flex items-start gap-2">
-        {/* Drag handle indicator */}
-        <div className="text-gray-400 mt-0.5 flex-shrink-0">
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-          </svg>
-        </div>
+        {/* Drag handle indicator (only when sortable enabled) */}
+        {!disableSortable && (
+          <div className="text-gray-400 mt-0.5 flex-shrink-0">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+            </svg>
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-2">{task.title}</h3>

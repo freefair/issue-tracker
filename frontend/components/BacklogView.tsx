@@ -1,22 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
+import type { PropsWithChildren } from 'react';
 import { Task, TaskStatus, BacklogCategory } from '@/types';
 import { TaskCard } from './TaskCard';
 import { TaskModal } from './TaskModal';
 import { CreateTaskModal } from './CreateTaskModal';
 import { ConfirmDialog } from './ConfirmDialog';
 import { backlogCategoryApi } from '@/lib/api';
-import {
-  DndContext,
-  DragEndEvent,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { CollisionPriority } from '@dnd-kit/abstract';
+import { DragDropProvider } from '@dnd-kit/react';
+import { useSortable } from '@dnd-kit/react/sortable';
+import { move } from '@dnd-kit/helpers';
+import { defaultPreset, PointerSensor, KeyboardSensor } from '@dnd-kit/dom';
+import type { DragDropEventHandlers } from '@dnd-kit/react';
 
 interface BacklogViewProps {
   boardId: string;
@@ -31,23 +28,72 @@ interface BacklogViewProps {
   onDeleteTask: (taskId: string) => void;
 }
 
-// Sortable Category Component
-function SortableCategory({
-  category,
-  tasks,
-  editingCategoryId,
-  editingCategoryName,
-  onEditStart,
-  onEditChange,
-  onEditEnd,
-  onDelete,
-  onCreateTask,
+const sensors = [PointerSensor, KeyboardSensor];
+
+interface SortableTaskProps {
+  task: Task;
+  categoryId: string | null;
+  index: number;
+  onTaskClick: (task: Task) => void;
+  onTaskUpdate: (taskId: string, updates: Partial<Task>) => void;
+  onTaskDelete: (taskId: string) => void;
+}
+
+const SortableTask = memo(function SortableTask({
+  task,
+  categoryId,
+  index,
   onTaskClick,
   onTaskUpdate,
   onTaskDelete,
-}: {
+}: PropsWithChildren<SortableTaskProps>) {
+  const DRAGGING_OPACITY = 0.5;
+  const group = categoryId || 'uncategorized';
+  const { ref, isDragging } = useSortable({
+    id: task.id,
+    group,
+    accept: 'task',
+    type: 'task',
+    feedback: 'clone',
+    index,
+    data: { group, type: 'task' },
+  });
+
+  return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    <div ref={ref as any} style={{ opacity: isDragging ? DRAGGING_OPACITY : 1 }}>
+      <TaskCard
+        task={task}
+        disableSortable={true}
+        onUpdate={onTaskUpdate}
+        onDelete={onTaskDelete}
+        onClick={() => onTaskClick(task)}
+        actionButton={{
+          label: 'To Todo',
+          onClick: () => onTaskUpdate(task.id, { status: TaskStatus.TODO }),
+          icon: (
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          ),
+        }}
+      />
+    </div>
+  );
+});
+
+interface SortableCategoryProps {
   category: BacklogCategory;
   tasks: Task[];
+  index: number;
   editingCategoryId: string | null;
   editingCategoryName: string;
   onEditStart: (id: string, name: string) => void;
@@ -58,34 +104,52 @@ function SortableCategory({
   onTaskClick: (task: Task) => void;
   onTaskUpdate: (taskId: string, updates: Partial<Task>) => void;
   onTaskDelete: (taskId: string) => void;
-}) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
-    id: category.id,
-  });
+}
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+const SortableCategory = memo(function SortableCategory({
+  category,
+  tasks,
+  index,
+  editingCategoryId,
+  editingCategoryName,
+  onEditStart,
+  onEditChange,
+  onEditEnd,
+  onDelete,
+  onCreateTask,
+  onTaskClick,
+  onTaskUpdate,
+  onTaskDelete,
+}: PropsWithChildren<SortableCategoryProps>) {
+  const DRAGGING_OPACITY = 0.5;
+  const { handleRef, isDragging, ref } = useSortable({
+    id: category.id,
+    accept: ['category', 'task'],
+    collisionPriority: CollisionPriority.Low,
+    type: 'category',
+    index,
+    data: { type: 'category' },
+  });
 
   return (
     <div
-      ref={setNodeRef}
-      style={style}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ref={ref as any}
       className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700 mb-4"
+      style={{ opacity: isDragging ? DRAGGING_OPACITY : 1 }}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 flex-1">
           {/* Drag Handle */}
-          <div
-            {...attributes}
-            {...listeners}
+          <button
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ref={handleRef as any}
             className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
             </svg>
-          </div>
+          </button>
 
           {editingCategoryId === category.id ? (
             <input
@@ -156,31 +220,16 @@ function SortableCategory({
         </div>
       </div>
 
-      <div className="space-y-3">
-        {tasks.map(task => (
-          <TaskCard
+      <div id={category.id} className="space-y-3">
+        {tasks.map((task, taskIndex) => (
+          <SortableTask
             key={task.id}
             task={task}
-            onUpdate={onTaskUpdate}
-            onDelete={onTaskDelete}
-            onClick={() => onTaskClick(task)}
-            actionButton={{
-              label: 'To Todo',
-              onClick: () => onTaskUpdate(task.id, { status: TaskStatus.TODO }),
-              icon: (
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              ),
-            }}
+            categoryId={category.id}
+            index={taskIndex}
+            onTaskClick={onTaskClick}
+            onTaskUpdate={onTaskUpdate}
+            onTaskDelete={onTaskDelete}
           />
         ))}
 
@@ -192,7 +241,7 @@ function SortableCategory({
       </div>
     </div>
   );
-}
+});
 
 export function BacklogView({
   boardId,
@@ -211,13 +260,9 @@ export function BacklogView({
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
+  // Organize tasks by category (including uncategorized)
+  const [tasksByCategory, setTasksByCategory] = useState<Record<string, Task[]>>({});
+  const snapshot = useRef<Record<string, Task[]>>({});
 
   // Load categories function
   const loadCategories = useCallback(async () => {
@@ -235,11 +280,31 @@ export function BacklogView({
     loadCategories();
   }, [loadCategories]);
 
-  // Note: selectedTask syncing removed - parent re-renders with updated task
+  // Organize tasks by category whenever tasks or categories change
+  useEffect(() => {
+    const backlogTasks = tasks
+      .filter(task => task.status === TaskStatus.BACKLOG)
+      .sort((a, b) => a.position - b.position);
 
-  const backlogTasks = tasks
-    .filter(task => task.status === TaskStatus.BACKLOG)
-    .sort((a, b) => a.position - b.position);
+    const organized: Record<string, Task[]> = { uncategorized: [] };
+
+    // Initialize all categories
+    categories.forEach(cat => {
+      organized[cat.id] = [];
+    });
+
+    // Distribute tasks
+    backlogTasks.forEach(task => {
+      const categoryId = task.backlogCategoryId || 'uncategorized';
+      if (!organized[categoryId]) {
+        organized[categoryId] = [];
+      }
+      organized[categoryId].push(task);
+    });
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTasksByCategory(organized);
+  }, [tasks, categories]);
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return;
@@ -289,17 +354,6 @@ export function BacklogView({
     }
   };
 
-  const getTasksByCategory = (categoryId: string | null) => {
-    return backlogTasks.filter(task => {
-      if (categoryId === null) {
-        return !task.backlogCategoryId;
-      }
-      return task.backlogCategoryId === categoryId;
-    });
-  };
-
-  const uncategorizedTasks = getTasksByCategory(null);
-
   const handleCreateTaskInCategory = (categoryId: string | undefined) => {
     setSelectedCategoryId(categoryId);
     setIsCreateModalOpen(true);
@@ -310,60 +364,8 @@ export function BacklogView({
     setSelectedCategoryId(undefined);
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over || active.id === over.id) return;
-
-    // Check if dragging a category
-    const isDraggingCategory = categories.some(c => c.id === active.id);
-
-    if (isDraggingCategory) {
-      // Handle category reordering
-      const oldIndex = categories.findIndex(c => c.id === active.id);
-      const newIndex = categories.findIndex(c => c.id === over.id);
-
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      const reorderedCategories = [...categories];
-      const [movedCategory] = reorderedCategories.splice(oldIndex, 1);
-      reorderedCategories.splice(newIndex, 0, movedCategory);
-
-      const updatedCategories = reorderedCategories.map((cat, index) => ({
-        ...cat,
-        position: index,
-      }));
-
-      setCategories(updatedCategories);
-
-      try {
-        await backlogCategoryApi.update(movedCategory.id, {
-          position: newIndex,
-        });
-      } catch (error) {
-        console.error('Failed to update category position:', error);
-        loadCategories();
-      }
-    } else {
-      // Handle task movement between categories
-      const draggedTask = backlogTasks.find(t => t.id === active.id);
-      if (!draggedTask) return;
-
-      // Find the task it was dropped on
-      const targetTask = backlogTasks.find(t => t.id === over.id);
-      if (!targetTask) return;
-
-      // Update the dragged task to have the same category as the target task
-      const newCategoryId = targetTask.backlogCategoryId || undefined;
-
-      // Only update if category changed
-      if (newCategoryId !== draggedTask.backlogCategoryId) {
-        onUpdateTask(draggedTask.id, {
-          backlogCategoryId: newCategoryId,
-        });
-      }
-    }
-  };
+  const uncategorizedTasks = tasksByCategory['uncategorized'] || [];
+  const totalTasks = Object.values(tasksByCategory).reduce((sum, tasks) => sum + tasks.length, 0);
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
@@ -371,7 +373,7 @@ export function BacklogView({
         <div>
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Backlog</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {backlogTasks.length} {backlogTasks.length === 1 ? 'task' : 'tasks'}
+            {totalTasks} {totalTasks === 1 ? 'task' : 'tasks'}
           </p>
         </div>
         <button
@@ -430,39 +432,83 @@ export function BacklogView({
         </div>
       )}
 
-      {/* Categories and Tasks - Single DndContext */}
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        {/* All tasks in ONE SortableContext */}
-        <SortableContext items={backlogTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          {/* Categories in separate SortableContext for category reordering */}
-          <SortableContext items={categories.map(c => c.id)} strategy={verticalListSortingStrategy}>
-            {categories.map(category => {
-              const categoryTasks = getTasksByCategory(category.id);
-              return (
-                <SortableCategory
-                  key={category.id}
-                  category={category}
-                  tasks={categoryTasks}
-                  editingCategoryId={editingCategoryId}
-                  editingCategoryName={editingCategoryName}
-                  onEditStart={(id, name) => {
-                    setEditingCategoryId(id);
-                    setEditingCategoryName(name);
-                  }}
-                  onEditChange={setEditingCategoryName}
-                  onEditEnd={handleRenameCategory}
-                  onDelete={handleDeleteCategory}
-                  onCreateTask={handleCreateTaskInCategory}
-                  onTaskClick={setSelectedTask}
-                  onTaskUpdate={onUpdateTask}
-                  onTaskDelete={onDeleteTask}
-                />
-              );
-            })}
-          </SortableContext>
+      {/* Drag & Drop Provider with new API */}
+      <DragDropProvider
+        plugins={defaultPreset.plugins}
+        sensors={sensors}
+        onDragStart={useCallback<DragDropEventHandlers['onDragStart']>(() => {
+          snapshot.current = JSON.parse(JSON.stringify(tasksByCategory));
+        }, [tasksByCategory])}
+        onDragOver={useCallback<DragDropEventHandlers['onDragOver']>(event => {
+          const { source } = event.operation;
+
+          // Don't handle category reordering here (categories have their own logic)
+          if (source && source.type === 'category') {
+            return;
+          }
+
+          // Handle task movement
+          setTasksByCategory(current => move(current, event));
+        }, [])}
+        onDragEnd={useCallback<DragDropEventHandlers['onDragEnd']>(
+          event => {
+            if (event.canceled) {
+              setTasksByCategory(snapshot.current);
+              return;
+            }
+
+            // After successful drag, update backend
+            const { source, target } = event.operation;
+
+            if (source && target && source.type === 'task') {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const sourceGroup = (source.data as any)?.group;
+              const targetGroup = String(target.id);
+
+              // Find the task
+              const allTasks = Object.values(tasksByCategory).flat();
+              const movedTask = allTasks.find(t => t.id === source.id);
+
+              if (movedTask && sourceGroup !== targetGroup) {
+                // Task moved to different category
+                const newCategoryId = targetGroup === 'uncategorized' ? undefined : targetGroup;
+                onUpdateTask(movedTask.id, {
+                  backlogCategoryId: newCategoryId,
+                });
+              }
+            }
+          },
+          [tasksByCategory, onUpdateTask]
+        )}
+      >
+        <div className="space-y-4">
+          {categories.map((category, index) => {
+            const categoryTasks = tasksByCategory[category.id] || [];
+            return (
+              <SortableCategory
+                key={category.id}
+                category={category}
+                tasks={categoryTasks}
+                index={index}
+                editingCategoryId={editingCategoryId}
+                editingCategoryName={editingCategoryName}
+                onEditStart={(id, name) => {
+                  setEditingCategoryId(id);
+                  setEditingCategoryName(name);
+                }}
+                onEditChange={setEditingCategoryName}
+                onEditEnd={handleRenameCategory}
+                onDelete={handleDeleteCategory}
+                onCreateTask={handleCreateTaskInCategory}
+                onTaskClick={setSelectedTask}
+                onTaskUpdate={onUpdateTask}
+                onTaskDelete={onDeleteTask}
+              />
+            );
+          })}
 
           {/* Uncategorized Tasks */}
-          <div className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700 mb-4">
+          <div className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
                 Uncategorized
@@ -480,31 +526,16 @@ export function BacklogView({
               </div>
             </div>
             {uncategorizedTasks.length > 0 ? (
-              <div className="space-y-3">
-                {uncategorizedTasks.map(task => (
-                  <TaskCard
+              <div id="uncategorized" className="space-y-3">
+                {uncategorizedTasks.map((task, taskIndex) => (
+                  <SortableTask
                     key={task.id}
                     task={task}
-                    onUpdate={onUpdateTask}
-                    onDelete={onDeleteTask}
-                    onClick={() => setSelectedTask(task)}
-                    actionButton={{
-                      label: 'To Todo',
-                      onClick: () => onUpdateTask(task.id, { status: TaskStatus.TODO }),
-                      icon: (
-                        <svg
-                          className="w-3 h-3"
-                          fill="none"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                      ),
-                    }}
+                    categoryId={null}
+                    index={taskIndex}
+                    onTaskClick={setSelectedTask}
+                    onTaskUpdate={onUpdateTask}
+                    onTaskDelete={onDeleteTask}
                   />
                 ))}
               </div>
@@ -514,8 +545,8 @@ export function BacklogView({
               </p>
             )}
           </div>
-        </SortableContext>
-      </DndContext>
+        </div>
+      </DragDropProvider>
 
       {/* Empty State */}
       {categories.length === 0 && uncategorizedTasks.length === 0 && (
