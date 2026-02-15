@@ -452,24 +452,24 @@ export function BacklogView({
       </DndContext>
 
       {/* Uncategorized Tasks */}
-      {uncategorizedTasks.length > 0 && (
-        <div className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700 mb-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-              Uncategorized
-            </h3>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {uncategorizedTasks.length} {uncategorizedTasks.length === 1 ? 'task' : 'tasks'}
-              </span>
-              <button
-                onClick={() => handleCreateTaskInCategory(undefined)}
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
-              >
-                + Task
-              </button>
-            </div>
+      <div className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700 mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+            Uncategorized
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {uncategorizedTasks.length} {uncategorizedTasks.length === 1 ? 'task' : 'tasks'}
+            </span>
+            <button
+              onClick={() => handleCreateTaskInCategory(undefined)}
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+            >
+              + Task
+            </button>
           </div>
+        </div>
+        {uncategorizedTasks.length > 0 ? (
           <div className="space-y-3">
             {uncategorizedTasks.map(task => (
               <TaskCard
@@ -498,8 +498,12 @@ export function BacklogView({
               />
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
+            No uncategorized tasks. Click "+ Task" to create one.
+          </p>
+        )}
+      </div>
 
       {/* Empty State */}
       {categories.length === 0 && uncategorizedTasks.length === 0 && (
