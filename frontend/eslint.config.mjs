@@ -1,0 +1,87 @@
+import js from '@eslint/js';
+import typescript from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import security from 'eslint-plugin-security';
+import prettier from 'eslint-plugin-prettier';
+
+export default [
+  js.configs.recommended,
+  {
+    files: ['**/*.{ts,tsx}'],
+    plugins: {
+      '@typescript-eslint': typescript,
+      react,
+      'react-hooks': reactHooks,
+      'jsx-a11y': jsxA11y,
+      security,
+      prettier,
+    },
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaVersion: 2024,
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
+        project: './tsconfig.json',
+      },
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        window: 'readonly',
+        document: 'readonly',
+        React: 'readonly',
+      },
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
+    rules: {
+      ...typescript.configs.recommended.rules,
+      ...react.configs.recommended.rules,
+      ...reactHooks.configs.recommended.rules,
+      ...jsxA11y.configs.recommended.rules,
+      ...security.configs.recommended.rules,
+      'prettier/prettier': 'error',
+      'no-console': 'error',
+      'no-debugger': 'error',
+      'no-alert': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
+      'jsx-a11y/anchor-is-valid': 'off',
+      'security/detect-object-injection': 'off',
+      'no-magic-numbers': [
+        'warn',
+        {
+          ignore: [-1, 0, 1, 2],
+          ignoreArrayIndexes: true,
+          enforceConst: true,
+          detectObjects: false,
+        },
+      ],
+    },
+  },
+  {
+    ignores: [
+      'node_modules/',
+      '.next/',
+      'out/',
+      'dist/',
+      'build/',
+      'coverage/',
+      '*.config.{js,mjs,ts}',
+    ],
+  },
+];
