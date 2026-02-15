@@ -459,6 +459,9 @@ export function BacklogView({
             const { source, target } = event.operation;
 
             if (source && target && source.type === 'task') {
+              // Save snapshot for potential revert
+              snapshot.current = tasksByCategory;
+
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const sourceGroup = (source.data as any)?.group;
 
@@ -468,12 +471,17 @@ export function BacklogView({
               const targetTask = allTasks.find(t => t.id === target.id);
 
               let targetGroup: string;
+              let insertIndex: number;
+
               if (targetTask) {
-                // Dropped on a task - use that task's category
+                // Dropped on a task - use that task's category and insert before it
                 targetGroup = targetTask.backlogCategoryId || 'uncategorized';
+                const targetCategoryTasks = tasksByCategory[targetGroup] || [];
+                insertIndex = targetCategoryTasks.findIndex(t => t.id === targetTask.id);
               } else {
-                // Dropped on a category container (div with category.id)
+                // Dropped on a category container - append at end
                 targetGroup = String(target.id);
+                insertIndex = (tasksByCategory[targetGroup] || []).length;
               }
 
               // Find the dragged task
@@ -491,12 +499,16 @@ export function BacklogView({
               // Recalculate positions from 0 to avoid negative values
               const updates: Array<{ id: string; updates: Partial<Task> }> = [];
 
+              // Build optimistic UI state
+              const newTasksByCategory = { ...tasksByCategory };
+
               if (categoryChanged) {
-                // Moving between categories - recalculate BOTH
-                // 1. Recalculate source category (remove moved task, close gap)
+                // Moving between categories
+                // 1. Remove from source category
                 const sourceTasksAfterRemoval = tasksInSourceCategory.filter(
                   t => t.id !== movedTask.id
                 );
+                newTasksByCategory[sourceGroup] = sourceTasksAfterRemoval;
 
                 sourceTasksAfterRemoval.forEach((task, index) => {
                   updates.push({
@@ -505,10 +517,15 @@ export function BacklogView({
                   });
                 });
 
-                // 2. Recalculate target category (insert moved task)
+                // 2. Insert into target category at correct position
                 const targetTasksWithInserted = [...tasksInTargetCategory];
-                // tasksInTargetCategory already includes the moved task at the new position from UI
-                // So we just need to reindex from 0
+                const movedTaskCopy = {
+                  ...movedTask,
+                  backlogCategoryId: newCategoryId,
+                };
+                targetTasksWithInserted.splice(insertIndex, 0, movedTaskCopy);
+                newTasksByCategory[targetGroup] = targetTasksWithInserted;
+
                 targetTasksWithInserted.forEach((task, index) => {
                   const taskUpdates: Partial<Task> = { position: index };
                   if (task.id === movedTask.id) {
@@ -520,8 +537,18 @@ export function BacklogView({
                   });
                 });
               } else {
-                // Moving within same category - recalculate all positions
-                tasksInTargetCategory.forEach((task, index) => {
+                // Moving within same category
+                // Get current position of moved task
+                const currentIndex = tasksInTargetCategory.findIndex(t => t.id === movedTask.id);
+                if (currentIndex === -1) return;
+
+                // Reorder within category
+                const reordered = [...tasksInTargetCategory];
+                const [removed] = reordered.splice(currentIndex, 1);
+                reordered.splice(insertIndex, 0, removed);
+                newTasksByCategory[targetGroup] = reordered;
+
+                reordered.forEach((task, index) => {
                   updates.push({
                     id: task.id,
                     updates: { position: index },
@@ -529,16 +556,21 @@ export function BacklogView({
                 });
               }
 
-              // Execute all updates
-              try {
-                for (const { id, updates: taskUpdates } of updates) {
-                  await onUpdateTask(id, taskUpdates);
+              // Optimistic UI update - apply immediately
+              setTasksByCategory(newTasksByCategory);
+
+              // Execute backend updates in background
+              (async () => {
+                try {
+                  for (const { id, updates: taskUpdates } of updates) {
+                    await onUpdateTask(id, taskUpdates);
+                  }
+                } catch (error) {
+                  console.error('Failed to update task positions:', error);
+                  // Revert UI on error
+                  setTasksByCategory(snapshot.current);
                 }
-              } catch (error) {
-                console.error('Failed to update task positions:', error);
-                // Revert UI on error
-                setTasksByCategory(snapshot.current);
-              }
+              })();
             }
           },
           [tasksByCategory, onUpdateTask]

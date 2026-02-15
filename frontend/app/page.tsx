@@ -130,22 +130,36 @@ function HomeContent() {
   const handleUpdateTask = async (taskId: string, updates: Partial<Task>) => {
     if (!currentBoard) return;
 
+    // Optimistic UI update - update immediately without backend reload
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId ? { ...task, ...updates, updatedAt: new Date().toISOString() } : task
+      )
+    );
+
     try {
       await taskApi.update(taskId, updates);
-      loadTasks(currentBoard.id);
+      // No full reload - optimistic update already applied
     } catch (err) {
+      // On error, reload to revert
       setError(err instanceof Error ? err.message : 'Failed to update task');
+      loadTasks(currentBoard.id);
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
     if (!currentBoard) return;
 
+    // Optimistic UI update - remove immediately
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+
     try {
       await taskApi.delete(taskId);
-      loadTasks(currentBoard.id);
+      // No full reload - optimistic update already applied
     } catch (err) {
+      // On error, reload to revert
       setError(err instanceof Error ? err.message : 'Failed to delete task');
+      loadTasks(currentBoard.id);
     }
   };
 
