@@ -36,7 +36,6 @@ class BoardService(
         logger.info("Creating new board: {}", request.name)
 
         val board = Board(
-            id = UUID.randomUUID(),
             name = request.name,
             description = request.description,
             createdAt = Instant.now()

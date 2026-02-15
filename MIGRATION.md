@@ -1,8 +1,8 @@
 # Migration Guide
 
-## Upgrade to Gradle 9.3.1 / Flyway 11 / PostgreSQL Compatibility
+## Upgrade to Gradle 9.3.1 / Flyway 11
 
-Nach dem Update auf Gradle 9.3.1, Flyway 11.1.0 und PostgreSQL-kompatiblen Migrationen kann es zu Flyway-Checksum-Fehlern kommen, wenn eine **bestehende lokale Datenbank** existiert.
+Nach dem Update auf Gradle 9.3.1 und Flyway 11.1.0 kann es zu Flyway-Checksum-Fehlern kommen, wenn eine **bestehende lokale Datenbank** existiert.
 
 ### Symptom
 
@@ -39,18 +39,9 @@ rm -rf backend/build/testdb*
 
 ### Was wurde geändert?
 
-**V1 Migration** (`V1__initial_schema.sql`):
-- ❌ Entfernt: `DEFAULT RANDOM_UUID()` (H2-spezifisch, nicht PostgreSQL-kompatibel)
-- ✅ UUIDs werden jetzt von der Anwendung generiert (`UUID.randomUUID()`)
-
 **V3 Migration** (`V3__create_backlog_categories.sql`):
 - `TIMESTAMP WITH TIME ZONE` → `TIMESTAMP` (H2-Kompatibilität)
 - Hinzugefügt: `DEFAULT CURRENT_TIMESTAMP` für created_at/updated_at
-
-**Service Layer**:
-- `BoardService.createBoard()`: Generiert jetzt explizit `id = UUID.randomUUID()`
-- `TaskService.createTask()`: Generiert jetzt explizit `id = UUID.randomUUID()`
-- `BacklogCategoryService.create()`: Hat bereits `id = UUID.randomUUID()`
 
 ### CI/CD Pipeline
 

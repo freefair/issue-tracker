@@ -50,7 +50,6 @@ class TaskService(
             ?: throw BoardNotFoundException(boardId)
 
         val task = Task(
-            id = UUID.randomUUID(),
             boardId = boardId,
             title = request.title,
             description = request.description,
