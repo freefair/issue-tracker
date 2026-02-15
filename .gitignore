@@ -36,3 +36,6 @@ frontend/.next/
 frontend/out/
 frontend/.env*.local
 data/
+
+# Deployed frontend (auto-generated from frontend/out)
+backend/src/main/resources/static/
