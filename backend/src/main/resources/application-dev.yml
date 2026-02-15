@@ -1,12 +1,12 @@
 spring:
   r2dbc:
-    url: r2dbc:h2:mem:///issuetracker
+    url: r2dbc:h2:file:///./data/issuetracker
     username: sa
     password:
 
   flyway:
     enabled: true
-    url: jdbc:h2:mem:issuetracker
+    url: jdbc:h2:file:./data/issuetracker
     user: sa
     password:
     baseline-on-migrate: true
