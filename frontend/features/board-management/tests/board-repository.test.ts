@@ -39,7 +39,7 @@ describe('BoardRepository', () => {
 
       expect(result).toEqual(mockBoards);
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/boards',
+        '/api/boards',
         expect.objectContaining({
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
@@ -108,10 +108,7 @@ describe('BoardRepository', () => {
       const result = await repository.getById('1');
 
       expect(result).toEqual(mockBoard);
-      expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/boards/1',
-        expect.any(Object)
-      );
+      expect(fetchMock).toHaveBeenCalledWith('/api/boards/1', expect.any(Object));
     });
 
     it('should throw ApiError with user-friendly message for 404', async () => {
@@ -142,7 +139,7 @@ describe('BoardRepository', () => {
 
       expect(result).toEqual(mockBoard);
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/boards',
+        '/api/boards',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(createRequest),
@@ -175,7 +172,7 @@ describe('BoardRepository', () => {
 
       expect(result).toEqual(updatedBoard);
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/boards/1',
+        '/api/boards/1',
         expect.objectContaining({
           method: 'PUT',
           body: JSON.stringify(updates),
@@ -194,7 +191,7 @@ describe('BoardRepository', () => {
       await repository.delete('1');
 
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/boards/1',
+        '/api/boards/1',
         expect.objectContaining({
           method: 'DELETE',
         })

@@ -44,7 +44,7 @@ describe('TaskRepository', () => {
 
       expect(result).toEqual(mockTasks);
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/tasks',
+        '/api/tasks',
         expect.objectContaining({
           headers: expect.objectContaining({
             'Content-Type': 'application/json',
@@ -83,10 +83,7 @@ describe('TaskRepository', () => {
       const result = await repository.getByBoardId('board1');
 
       expect(result).toEqual(mockTasks);
-      expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/tasks?boardId=board1',
-        expect.any(Object)
-      );
+      expect(fetchMock).toHaveBeenCalledWith('/api/tasks?boardId=board1', expect.any(Object));
     });
   });
 
@@ -100,10 +97,7 @@ describe('TaskRepository', () => {
       const result = await repository.getById('1');
 
       expect(result).toEqual(mockTask);
-      expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/tasks/1',
-        expect.any(Object)
-      );
+      expect(fetchMock).toHaveBeenCalledWith('/api/tasks/1', expect.any(Object));
     });
   });
 
@@ -124,7 +118,7 @@ describe('TaskRepository', () => {
 
       expect(result).toEqual(mockTask);
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/tasks',
+        '/api/tasks',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify(createRequest),
@@ -146,7 +140,7 @@ describe('TaskRepository', () => {
 
       expect(result).toEqual(updatedTask);
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/tasks/1',
+        '/api/tasks/1',
         expect.objectContaining({
           method: 'PUT',
           body: JSON.stringify(updates),
@@ -165,7 +159,7 @@ describe('TaskRepository', () => {
       await repository.delete('1');
 
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/tasks/1',
+        '/api/tasks/1',
         expect.objectContaining({
           method: 'DELETE',
         })
@@ -184,10 +178,7 @@ describe('TaskRepository', () => {
       const result = await repository.search('test');
 
       expect(result).toEqual(mockTasks);
-      expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/tasks/search?q=test',
-        expect.any(Object)
-      );
+      expect(fetchMock).toHaveBeenCalledWith('/api/tasks/search?q=test', expect.any(Object));
     });
 
     it('should search tasks with query and board ID', async () => {
@@ -201,7 +192,7 @@ describe('TaskRepository', () => {
 
       expect(result).toEqual(mockTasks);
       expect(fetchMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/tasks/search?q=test&boardId=board1',
+        '/api/tasks/search?q=test&boardId=board1',
         expect.any(Object)
       );
     });
