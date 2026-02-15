@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import type { PropsWithChildren } from 'react';
 import { Task, TaskStatus, BacklogCategory } from '@/types';
-import { TaskCard } from './TaskCard';
+import { TaskCardView } from './TaskCardView';
 import { TaskModal } from './TaskModal';
 import { CreateTaskModal } from './CreateTaskModal';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -45,7 +45,7 @@ const SortableTask = memo(function SortableTask({
   index,
   onTaskClick,
   onTaskUpdate,
-  onTaskDelete,
+  onTaskDelete: _onTaskDelete,
 }: PropsWithChildren<SortableTaskProps>) {
   const DRAGGING_OPACITY = 0.5;
   const group = categoryId || 'uncategorized';
@@ -62,11 +62,9 @@ const SortableTask = memo(function SortableTask({
   return (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     <div ref={ref as any} style={{ opacity: isDragging ? DRAGGING_OPACITY : 1 }}>
-      <TaskCard
+      <TaskCardView
         task={task}
-        disableSortable={true}
-        onUpdate={onTaskUpdate}
-        onDelete={onTaskDelete}
+        isDragging={isDragging}
         onClick={() => onTaskClick(task)}
         actionButton={{
           label: 'To Todo',

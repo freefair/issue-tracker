@@ -15,7 +15,7 @@ import {
   useSensors,
   closestCorners,
 } from '@dnd-kit/core';
-import { TaskCard } from './TaskCard';
+import { TaskCardView } from './TaskCardView';
 import { TaskModal } from './TaskModal';
 
 interface BoardViewProps {
@@ -191,7 +191,7 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
       <DragOverlay>
         {activeTask ? (
           <div className="rotate-3">
-            <TaskCard task={activeTask} onUpdate={() => {}} onDelete={() => {}} isDragging={true} />
+            <TaskCardView task={activeTask} isDragging={true} />
           </div>
         ) : null}
       </DragOverlay>
