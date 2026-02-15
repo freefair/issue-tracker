@@ -11,11 +11,11 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
             // Versions
-            version("kotlin", "1.9.22")
-            version("spring-boot", "3.2.2")
-            version("spring-dependency-management", "1.1.4")
-            version("jib", "3.4.0")
-            version("flyway", "10.8.1")
+            version("kotlin", "2.1.0")
+            version("spring-boot", "3.4.1")
+            version("spring-dependency-management", "1.1.7")
+            version("jib", "3.4.4")
+            version("flyway", "11.1.0")
 
             // Plugins
             plugin("kotlin-jvm", "org.jetbrains.kotlin.jvm").versionRef("kotlin")

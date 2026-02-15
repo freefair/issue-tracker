@@ -43,6 +43,7 @@ class TaskControllerTest {
             status = TaskStatus.TODO,
             position = 1,
             tags = listOf("backend"),
+            backlogCategoryId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -70,6 +71,7 @@ class TaskControllerTest {
             status = TaskStatus.TODO,
             position = 1,
             tags = emptyList(),
+            backlogCategoryId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -98,6 +100,7 @@ class TaskControllerTest {
             status = TaskStatus.TODO,
             position = 1,
             tags = emptyList(),
+            backlogCategoryId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -147,6 +150,7 @@ class TaskControllerTest {
             status = TaskStatus.TODO,
             position = 1,
             tags = listOf("test"),
+            backlogCategoryId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -183,6 +187,7 @@ class TaskControllerTest {
             status = TaskStatus.IN_PROGRESS,
             position = 2,
             tags = listOf("updated"),
+            backlogCategoryId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -213,6 +218,7 @@ class TaskControllerTest {
             status = TaskStatus.DONE,
             position = 5,
             tags = emptyList(),
+            backlogCategoryId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
@@ -256,6 +262,7 @@ class TaskControllerTest {
             status = TaskStatus.TODO,
             position = 1,
             tags = listOf("backend", "security"),
+            backlogCategoryId = null,
             createdAt = Instant.now(),
             updatedAt = Instant.now()
         )
