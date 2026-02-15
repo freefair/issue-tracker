@@ -35,6 +35,10 @@ export default [
         window: 'readonly',
         document: 'readonly',
         React: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
       },
     },
     settings: {
@@ -71,6 +75,12 @@ export default [
           detectObjects: false,
         },
       ],
+    },
+  },
+  {
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    rules: {
+      'no-magic-numbers': 'off',
     },
   },
   {
