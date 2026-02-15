@@ -3,8 +3,6 @@
 # Backend tests
 ./gradlew :backend:test -x npmInstall -x buildFrontend -x copyFrontend
 
-# Frontend tests
-cd frontend && npm test
-
 # Frontend linting
-npx lint-staged
+cd frontend && npx lint-staged
+npm test
