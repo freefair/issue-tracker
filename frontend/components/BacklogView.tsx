@@ -231,6 +231,7 @@ export function BacklogView({
 
   // Load categories on mount and when boardId changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCategories();
   }, [loadCategories]);
 

@@ -26,6 +26,7 @@ export function Sidebar({
   onEditBoard,
   onDeleteBoard,
 }: SidebarProps) {
+  const MOBILE_BREAKPOINT = 768;
   const [boardToDelete, setBoardToDelete] = useState<Board | null>(null);
   const [boardFilter, setBoardFilter] = useState('');
 
@@ -104,7 +105,7 @@ export function Sidebar({
                 `}
                 onClick={() => {
                   // Close sidebar on mobile after clicking
-                  if (window.innerWidth < 768) {
+                  if (window.innerWidth < MOBILE_BREAKPOINT) {
                     onToggle();
                   }
                 }}

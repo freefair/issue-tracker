@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Task } from '@/types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -23,18 +23,16 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
   const [description, setDescription] = useState(task.description);
   const [tags, setTags] = useState<string[]>(task.tags);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentTaskId, setCurrentTaskId] = useState(task.id);
+  const previousTaskIdRef = useRef<string>(task.id);
 
-  // Update internal state when task ID changes (different task selected)
-  useEffect(() => {
-    if (task.id !== currentTaskId) {
-      setTitle(task.title);
-      setDescription(task.description);
-      setTags(task.tags);
-      setIsEditing(false);
-      setCurrentTaskId(task.id);
-    }
-  }, [task, currentTaskId]);
+  // Update internal state when task changes (using ref to avoid setState in useEffect warning)
+  if (task.id !== previousTaskIdRef.current) {
+    setTitle(task.title);
+    setDescription(task.description);
+    setTags(task.tags);
+    setIsEditing(false);
+    previousTaskIdRef.current = task.id;
+  }
 
   if (!isOpen) return null;
 

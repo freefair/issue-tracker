@@ -19,8 +19,8 @@ interface TaskCardProps {
 
 export function TaskCard({
   task,
-  onUpdate,
-  onDelete,
+  onUpdate: _onUpdate,
+  onDelete: _onDelete,
   onClick,
   isDragging = false,
   actionButton,
@@ -40,7 +40,7 @@ export function TaskCard({
     opacity: isSortableDragging ? 0.5 : 1,
   };
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = (_e: React.MouseEvent) => {
     // Only open modal if not dragging
     if (!isSortableDragging && !isDragging && onClick) {
       onClick();
