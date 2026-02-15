@@ -53,6 +53,9 @@ dependencyResolutionManagement {
             library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
             library("flyway-database-postgresql", "org.flywaydb", "flyway-database-postgresql").versionRef("flyway")
 
+            // Libraries - Embedded PostgreSQL (no Docker required)
+            library("embedded-postgres", "io.zonky.test", "embedded-postgres").version("2.1.0")
+
             // Bundles
             bundle("spring-boot-starters", listOf(
                 "spring-boot-starter-webflux",

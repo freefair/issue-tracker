@@ -31,6 +31,9 @@ dependencies {
     testImplementation("io.projectreactor:reactor-test")
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+
+    // Embedded PostgreSQL (no Docker required)
+    testImplementation(libs.embedded.postgres)
 }
 
 jib {

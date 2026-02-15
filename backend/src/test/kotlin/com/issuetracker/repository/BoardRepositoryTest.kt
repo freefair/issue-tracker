@@ -1,5 +1,6 @@
 package com.issuetracker.repository
 
+import com.issuetracker.config.AbstractIntegrationTest
 import com.issuetracker.domain.Board
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
@@ -8,11 +9,26 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.DynamicPropertyRegistry
+import org.springframework.test.context.DynamicPropertySource
 import java.time.Instant
 
 @SpringBootTest
 @ActiveProfiles("test")
-class BoardRepositoryTest {
+class BoardRepositoryTest : AbstractIntegrationTest() {
+
+    companion object {
+        @JvmStatic
+        @DynamicPropertySource
+        fun properties(registry: DynamicPropertyRegistry) {
+            registry.add("spring.r2dbc.url") { getR2dbcUrl() }
+            registry.add("spring.r2dbc.username") { getUsername() }
+            registry.add("spring.r2dbc.password") { getPassword() }
+            registry.add("spring.flyway.url") { getJdbcUrl() }
+            registry.add("spring.flyway.user") { getUsername() }
+            registry.add("spring.flyway.password") { getPassword() }
+        }
+    }
 
     @Autowired
     private lateinit var boardRepository: BoardRepository

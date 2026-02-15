@@ -106,16 +106,26 @@ CREATE TABLE boards (
 );
 ```
 
-**Achtung**: Tests erwarten derzeit, dass die Datenbank UUIDs generiert. Bei Entfernung von `DEFAULT` müssen alle Tests angepasst werden.
+### ✅ Lösung implementiert (v0.3.0)
 
-### Aktuelle Konfiguration
+**Embedded PostgreSQL für Tests:**
 
-✅ **Development/Tests (H2)**: Verwendet `DEFAULT RANDOM_UUID()`
-⚠️  **Production (PostgreSQL)**: Requires manual migration modification (see Option 1 or 2 above)
+Die Migration wurde auf `gen_random_uuid()` umgestellt und Tests verwenden jetzt **embedded PostgreSQL** statt H2:
 
-### Empfehlung
+**Aktueller Stand:**
+- ✅ **Development**: PostgreSQL mit `gen_random_uuid()`
+- ✅ **Tests**: Embedded PostgreSQL (io.zonky.test:embedded-postgres) - kein Docker erforderlich
+- ✅ **Production**: PostgreSQL 13+ mit `gen_random_uuid()` (nativ unterstützt)
 
-Für neue PostgreSQL-Deployments:
-1. Erstelle eine PostgreSQL-spezifische Migrationsdatei `V1__initial_schema.postgresql.sql`
-2. Verwende `DEFAULT gen_random_uuid()` statt `DEFAULT RANDOM_UUID()`
-3. Flyway wählt automatisch die richtige Datei basierend auf der Datenbank
+**Vorteile:**
+- Gleiche Datenbank in Tests wie in Production
+- Keine H2-spezifischen Workarounds mehr
+- Tests starten auf zufälligem Port (keine Konflikte)
+- Kein Docker für Tests erforderlich
+
+**Migration verwendet jetzt:**
+```sql
+id UUID DEFAULT gen_random_uuid() PRIMARY KEY
+```
+
+Funktioniert nativ in PostgreSQL 13+ - keine manuelle Anpassung erforderlich!
