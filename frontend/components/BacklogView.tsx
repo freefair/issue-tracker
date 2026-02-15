@@ -5,6 +5,7 @@ import { Task, TaskStatus, BacklogCategory } from '@/types';
 import { TaskCard } from './TaskCard';
 import { TaskModal } from './TaskModal';
 import { CreateTaskModal } from './CreateTaskModal';
+import { ConfirmDialog } from './ConfirmDialog';
 import { backlogCategoryApi } from '@/lib/api';
 import {
   DndContext,
@@ -209,6 +210,7 @@ export function BacklogView({
   const [newCategoryName, setNewCategoryName] = useState('');
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
+  const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -277,14 +279,20 @@ export function BacklogView({
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Delete this category? Tasks will not be deleted.')) return;
+  const handleDeleteCategory = (categoryId: string) => {
+    setDeleteCategoryId(categoryId);
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!deleteCategoryId) return;
 
     try {
-      await backlogCategoryApi.delete(categoryId);
-      setCategories(categories.filter(c => c.id !== categoryId));
+      await backlogCategoryApi.delete(deleteCategoryId);
+      setCategories(categories.filter(c => c.id !== deleteCategoryId));
+      setDeleteCategoryId(null);
     } catch (error) {
       console.error('Failed to delete category:', error);
+      setDeleteCategoryId(null);
     }
   };
 
@@ -521,6 +529,17 @@ export function BacklogView({
         }}
         onCreate={handleCreateTask}
         defaultStatus={TaskStatus.BACKLOG}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteCategoryId !== null}
+        title="Delete Category"
+        message="Are you sure you want to delete this category? Tasks in this category will not be deleted."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        isDangerous={true}
+        onConfirm={confirmDeleteCategory}
+        onCancel={() => setDeleteCategoryId(null)}
       />
     </div>
   );

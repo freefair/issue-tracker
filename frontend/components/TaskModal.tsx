@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { TagInput } from './TagInput';
+import { ConfirmDialog } from './ConfirmDialog';
 import 'highlight.js/styles/github.css';
 
 interface TaskModalProps {
@@ -21,6 +22,7 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
   const [tags, setTags] = useState<string[]>(task.tags);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Update internal state when task prop changes
   useEffect(() => {
@@ -53,17 +55,21 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
   };
 
   const handleDelete = () => {
-    if (confirm('Delete this task?')) {
-      onDelete(task.id);
-      onClose();
-    }
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    onDelete(task.id);
+    setIsDeleteDialogOpen(false);
+    onClose();
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      >
       <div
         className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden"
         onClick={e => e.stopPropagation()}
@@ -279,5 +285,17 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
         </div>
       </div>
     </div>
+
+    <ConfirmDialog
+      isOpen={isDeleteDialogOpen}
+      title="Delete Task"
+      message="Are you sure you want to delete this task? This action cannot be undone."
+      confirmLabel="Delete"
+      cancelLabel="Cancel"
+      isDangerous={true}
+      onConfirm={confirmDelete}
+      onCancel={() => setIsDeleteDialogOpen(false)}
+    />
+  </>
   );
 }
