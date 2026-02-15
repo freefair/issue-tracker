@@ -83,12 +83,17 @@ describe('BoardRepository', () => {
     it('should throw ApiError after max retries', async () => {
       fetchMock.mockRejectedValue(new Error('Network error'));
 
+      // Catch the promise before running timers to avoid unhandled rejection
       const promise = repository.getAll();
+      const errorPromise = promise.catch(() => {
+        /* Expected to fail */
+      });
 
       // Fast-forward through all retry delays
       await vi.runAllTimersAsync();
 
       await expect(promise).rejects.toThrow(ApiError);
+      await errorPromise; // Ensure promise is settled
       expect(fetchMock).toHaveBeenCalledTimes(3);
     });
   });
@@ -218,6 +223,9 @@ describe('BoardRepository', () => {
       });
 
       const promise = repository.getAll();
+      const errorPromise = promise.catch(() => {
+        /* Expected to fail */
+      });
       await vi.runAllTimersAsync();
 
       try {
@@ -227,6 +235,7 @@ describe('BoardRepository', () => {
         expect(error).toBeInstanceOf(ApiError);
         expect((error as ApiError).userMessage).toBe('Server error. Please try again later.');
       }
+      await errorPromise; // Ensure promise is settled
     });
 
     it('should throw ApiError for 403 forbidden error', async () => {
@@ -252,10 +261,14 @@ describe('BoardRepository', () => {
       fetchMock.mockRejectedValue(new Error('Failed to fetch'));
 
       const promise = repository.getAll();
+      const errorPromise = promise.catch(() => {
+        /* Expected to fail */
+      });
       await vi.runAllTimersAsync();
 
       await expect(promise).rejects.toThrow(ApiError);
       await expect(promise).rejects.toThrow('Network error');
+      await errorPromise; // Ensure promise is settled
     });
   });
 });
