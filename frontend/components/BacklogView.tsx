@@ -459,107 +459,101 @@ export function BacklogView({
             const { source, target } = event.operation;
 
             if (source && target && source.type === 'task') {
-              // Save snapshot for potential revert
-              snapshot.current = tasksByCategory;
-
+              // Get source and target groups from the drag data
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const sourceGroup = (source.data as any)?.group;
-
-              // Target could be another task or a category container
-              // If it's a task, find which group it belongs to
-              const allTasks = Object.values(tasksByCategory).flat();
-              const targetTask = allTasks.find(t => t.id === target.id);
-
-              let targetGroup: string;
-              let insertIndex: number;
-
-              if (targetTask) {
-                // Dropped on a task - use that task's category and insert before it
-                targetGroup = targetTask.backlogCategoryId || 'uncategorized';
-                const targetCategoryTasks = tasksByCategory[targetGroup] || [];
-                insertIndex = targetCategoryTasks.findIndex(t => t.id === targetTask.id);
-              } else {
-                // Dropped on a category container - append at end
-                targetGroup = String(target.id);
-                insertIndex = (tasksByCategory[targetGroup] || []).length;
-              }
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const targetGroup = (target.data as any)?.group || String(target.id);
 
               // Find the dragged task
+              const allTasks = Object.values(tasksByCategory).flat();
               const movedTask = allTasks.find(t => t.id === source.id);
               if (!movedTask) return;
 
+              // Determine target category ID (undefined for uncategorized)
+              const targetCategoryId = targetGroup === 'uncategorized' ? undefined : targetGroup;
+
               // Check if category changed
               const categoryChanged = sourceGroup !== targetGroup;
-              const newCategoryId = targetGroup === 'uncategorized' ? undefined : targetGroup;
 
-              // Get tasks in source and target categories
+              // Get tasks in source and target categories from CURRENT state
               const tasksInSourceCategory = tasksByCategory[sourceGroup] || [];
               const tasksInTargetCategory = tasksByCategory[targetGroup] || [];
 
-              // Recalculate positions from 0 to avoid negative values
-              const updates: Array<{ id: string; updates: Partial<Task> }> = [];
+              // Find insert index
+              const targetTask = allTasks.find(t => t.id === target.id);
+              let insertIndex: number;
+              if (targetTask) {
+                // Dropped on a task - insert before it
+                insertIndex = tasksInTargetCategory.findIndex(t => t.id === targetTask.id);
+              } else {
+                // Dropped on category container - append at end
+                insertIndex = tasksInTargetCategory.length;
+              }
 
-              // Build optimistic UI state
-              const newTasksByCategory = { ...tasksByCategory };
+              // Build update list
+              const updates: Array<{ id: string; updates: Partial<Task> }> = [];
 
               if (categoryChanged) {
                 // Moving between categories
-                // 1. Remove from source category
-                const sourceTasksAfterRemoval = tasksInSourceCategory.filter(
-                  t => t.id !== movedTask.id
-                );
-                newTasksByCategory[sourceGroup] = sourceTasksAfterRemoval;
-
-                sourceTasksAfterRemoval.forEach((task, index) => {
-                  updates.push({
-                    id: task.id,
-                    updates: { position: index },
+                // 1. Reindex source category (without moved task)
+                tasksInSourceCategory
+                  .filter(t => t.id !== movedTask.id)
+                  .forEach((task, index) => {
+                    if (task.position !== index) {
+                      updates.push({
+                        id: task.id,
+                        updates: { position: index },
+                      });
+                    }
                   });
-                });
 
-                // 2. Insert into target category at correct position
-                const targetTasksWithInserted = [...tasksInTargetCategory];
-                const movedTaskCopy = {
-                  ...movedTask,
-                  backlogCategoryId: newCategoryId,
-                };
-                targetTasksWithInserted.splice(insertIndex, 0, movedTaskCopy);
-                newTasksByCategory[targetGroup] = targetTasksWithInserted;
+                // 2. Insert moved task into target category and reindex all
+                const targetWithInserted = [...tasksInTargetCategory];
+                targetWithInserted.splice(insertIndex, 0, movedTask);
 
-                targetTasksWithInserted.forEach((task, index) => {
-                  const taskUpdates: Partial<Task> = { position: index };
+                targetWithInserted.forEach((task, index) => {
                   if (task.id === movedTask.id) {
-                    taskUpdates.backlogCategoryId = newCategoryId;
+                    // Update BOTH position AND category for moved task
+                    updates.push({
+                      id: task.id,
+                      updates: {
+                        position: index,
+                        backlogCategoryId: targetCategoryId,
+                      },
+                    });
+                  } else if (task.position !== index) {
+                    // Update position for other tasks if needed
+                    updates.push({
+                      id: task.id,
+                      updates: { position: index },
+                    });
                   }
-                  updates.push({
-                    id: task.id,
-                    updates: taskUpdates,
-                  });
                 });
               } else {
                 // Moving within same category
-                // Get current position of moved task
                 const currentIndex = tasksInTargetCategory.findIndex(t => t.id === movedTask.id);
                 if (currentIndex === -1) return;
 
-                // Reorder within category
+                if (currentIndex === insertIndex) return; // No change
+
+                // Reorder and reindex
                 const reordered = [...tasksInTargetCategory];
                 const [removed] = reordered.splice(currentIndex, 1);
                 reordered.splice(insertIndex, 0, removed);
-                newTasksByCategory[targetGroup] = reordered;
 
                 reordered.forEach((task, index) => {
-                  updates.push({
-                    id: task.id,
-                    updates: { position: index },
-                  });
+                  if (task.position !== index) {
+                    updates.push({
+                      id: task.id,
+                      updates: { position: index },
+                    });
+                  }
                 });
               }
 
-              // Optimistic UI update - apply immediately
-              setTasksByCategory(newTasksByCategory);
-
-              // Execute backend updates in background
+              // Execute backend updates
+              // No optimistic UI update here - let parent's optimistic update handle it
               (async () => {
                 try {
                   for (const { id, updates: taskUpdates } of updates) {
@@ -567,8 +561,6 @@ export function BacklogView({
                   }
                 } catch (error) {
                   console.error('Failed to update task positions:', error);
-                  // Revert UI on error
-                  setTasksByCategory(snapshot.current);
                 }
               })();
             }
