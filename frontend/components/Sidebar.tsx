@@ -8,6 +8,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 interface SidebarProps {
   boards: Board[];
   currentBoardId?: string;
+  currentView?: 'board' | 'backlog' | 'archive';
   isOpen: boolean;
   onToggle: () => void;
   onCreateBoard: () => void;
@@ -15,7 +16,7 @@ interface SidebarProps {
   onDeleteBoard: (boardId: string) => void;
 }
 
-export function Sidebar({ boards, currentBoardId, isOpen, onToggle, onCreateBoard, onEditBoard, onDeleteBoard }: SidebarProps) {
+export function Sidebar({ boards, currentBoardId, currentView = 'board', isOpen, onToggle, onCreateBoard, onEditBoard, onDeleteBoard }: SidebarProps) {
   const [boardToDelete, setBoardToDelete] = useState<Board | null>(null);
   const [boardFilter, setBoardFilter] = useState('');
 
@@ -75,7 +76,7 @@ export function Sidebar({ boards, currentBoardId, isOpen, onToggle, onCreateBoar
           {filteredBoards.map(board => (
             <div key={board.id} className="group relative">
               <Link
-                href={`/?board=${board.id}`}
+                href={`/?board=${board.id}&view=${currentView}`}
                 className={`
                   block px-4 py-2 pr-20 rounded-lg transition-colors text-sm font-medium
                   ${currentBoardId === board.id

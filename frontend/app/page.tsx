@@ -17,6 +17,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const boardId = searchParams.get('board');
+  const viewParam = searchParams.get('view') as 'board' | 'backlog' | 'archive' | null;
 
   const [boards, setBoards] = useState<Board[]>([]);
   const [currentBoard, setCurrentBoard] = useState<Board | null>(null);
@@ -26,7 +27,7 @@ function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [view, setView] = useState<'board' | 'backlog' | 'archive'>('board');
+  const [view, setView] = useState<'board' | 'backlog' | 'archive'>(viewParam || 'board');
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false);
   const [boardToEdit, setBoardToEdit] = useState<Board | null>(null);
 
@@ -38,7 +39,8 @@ function HomeContent() {
     if (boards.length > 0) {
       // If no board specified in URL, redirect to first board
       if (!boardId) {
-        router.push(`/?board=${boards[0].id}`);
+        const defaultView = viewParam || 'board';
+        router.push(`/?board=${boards[0].id}&view=${defaultView}`);
       } else {
         // Load the specified board
         const board = boards.find(b => b.id === boardId);
@@ -49,6 +51,13 @@ function HomeContent() {
       }
     }
   }, [boardId, boards, router]);
+
+  // Update view when URL parameter changes
+  useEffect(() => {
+    if (viewParam) {
+      setView(viewParam);
+    }
+  }, [viewParam]);
 
   const loadBoards = async () => {
     try {
@@ -82,7 +91,7 @@ function HomeContent() {
     try {
       const board = await boardApi.create(name, description);
       await loadBoards();
-      router.push(`/?board=${board.id}`);
+      router.push(`/?board=${board.id}&view=board`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create board');
       console.error(err);
@@ -155,7 +164,7 @@ function HomeContent() {
       // If we deleted the current board, redirect to another board or home
       if (boardId === currentBoard?.id) {
         if (updatedBoards.length > 0) {
-          router.push(`/?board=${updatedBoards[0].id}`);
+          router.push(`/?board=${updatedBoards[0].id}&view=${view}`);
         } else {
           router.push('/');
         }
@@ -163,6 +172,13 @@ function HomeContent() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete board');
     }
+  };
+
+  const handleViewChange = (newView: 'board' | 'backlog' | 'archive') => {
+    if (currentBoard) {
+      router.push(`/?board=${currentBoard.id}&view=${newView}`);
+    }
+    setView(newView);
   };
 
   if (loading) {
@@ -211,6 +227,7 @@ function HomeContent() {
       <Sidebar
         boards={boards}
         currentBoardId={boardId || undefined}
+        currentView={view}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
         onCreateBoard={() => setIsCreateBoardModalOpen(true)}
@@ -223,7 +240,7 @@ function HomeContent() {
           boards={boards}
           allTags={allTags}
           view={view}
-          onViewChange={setView}
+          onViewChange={handleViewChange}
           onTaskSelect={setSelectedTask}
         />
         {currentBoard && view === 'board' && (
