@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Task, Board, TaskStatus } from '@/types';
 import { taskApi } from '@/lib/api';
+import { logger } from '@/shared/utils/logger';
 
 type QueryChip = {
   type: 'board' | 'tag' | 'status';
@@ -140,7 +141,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
 
     if (shouldSearch) {
       const timer = setTimeout(() => {
-        performSearch();
+        void performSearch();
       }, SEARCH_DEBOUNCE_MS);
       return () => clearTimeout(timer);
     } else {
@@ -152,14 +153,14 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
 
   const performSearch = async () => {
     setIsLoading(true);
+
+    // Determine search scope from chips (before try for error logging)
+    const boardChip = chips.find(c => c.type === 'board');
+    const freeTextQuery = inputValue.trim();
+
     try {
-      // Determine search scope from chips
-      const boardChip = chips.find(c => c.type === 'board');
       const tagChips = chips.filter(c => c.type === 'tag');
       const statusChips = chips.filter(c => c.type === 'status');
-
-      // Build search query (free text from input)
-      const freeTextQuery = inputValue.trim();
 
       // For now, search in the specified board or globally
       let searchResults: Task[] = [];
@@ -197,7 +198,11 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
       setResults(filteredResults);
       setIsResultsOpen(true);
     } catch (error) {
-      console.error('Search failed:', error);
+      logger.error(error instanceof Error ? error : new Error('Search failed'), {
+        context: 'TaskSearch.performSearch',
+        query: freeTextQuery,
+        boardId: boardChip?.value,
+      });
       setResults([]);
     } finally {
       setIsLoading(false);
@@ -411,7 +416,7 @@ export function TaskSearch({ currentBoardId, boards, allTags, onTaskSelect }: Ta
                 if (results.length > 0) {
                   setIsResultsOpen(true);
                 } else {
-                  performSearch();
+                  void performSearch();
                 }
               }
             }}

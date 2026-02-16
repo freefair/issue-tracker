@@ -1,0 +1,9 @@
+export { Header } from './Header';
+export { Sidebar } from './Sidebar';
+export { TaskModal } from './TaskModal';
+export { CreateBoardModal } from './CreateBoardModal';
+export { EditBoardModal } from './EditBoardModal';
+export { ConfirmDialog } from './ConfirmDialog';
+export { CreateTaskModal } from './CreateTaskModal';
+export { TagInput } from './TagInput';
+export { TaskSearch } from './TaskSearch';

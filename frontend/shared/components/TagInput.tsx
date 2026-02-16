@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from '@/shared/constants/app-constants';
+import { logger } from '@/shared/utils/logger';
 
 interface TagInputProps {
   boardId: string;
@@ -51,12 +52,16 @@ export function TagInput({ boardId, tags, onChange, placeholder = 'Add tags...' 
           setSuggestions(filtered);
         }
       } catch (err) {
-        console.error('Failed to fetch tag suggestions:', err);
+        logger.error(err instanceof Error ? err : new Error('Failed to fetch tag suggestions'), {
+          context: 'TagInput.fetchSuggestions',
+          boardId,
+          input,
+        });
         setSuggestions([]);
       }
     };
 
-    const debounceTimer = setTimeout(fetchSuggestions, SUGGESTION_DEBOUNCE_MS);
+    const debounceTimer = setTimeout(() => void fetchSuggestions(), SUGGESTION_DEBOUNCE_MS);
     return () => clearTimeout(debounceTimer);
   }, [input, boardId, tags]);
 

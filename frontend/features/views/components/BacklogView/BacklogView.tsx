@@ -3,11 +3,10 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import type { PropsWithChildren } from 'react';
 import { Task, TaskStatus, BacklogCategory } from '@/types';
-import { TaskCardView } from './TaskCardView';
-import { TaskModal } from './TaskModal';
-import { CreateTaskModal } from './CreateTaskModal';
-import { ConfirmDialog } from './ConfirmDialog';
+import { TaskCardView } from '../TaskCardView';
+import { TaskModal, CreateTaskModal, ConfirmDialog } from '@/shared/components';
 import { backlogCategoryApi } from '@/lib/api';
+import { logger } from '@/shared/utils/logger';
 import { CollisionPriority } from '@dnd-kit/abstract';
 import { DragDropProvider } from '@dnd-kit/react';
 import { useSortable } from '@dnd-kit/react/sortable';
@@ -340,14 +339,17 @@ export function BacklogView({
       const cats = await backlogCategoryApi.getAll(boardId);
       setCategories(cats);
     } catch (error) {
-      console.error('Failed to load categories:', error);
+      logger.error(error instanceof Error ? error : new Error('Failed to load categories'), {
+        context: 'BacklogView.loadCategories',
+        boardId,
+      });
     }
   }, [boardId]);
 
   // Load categories on mount and when boardId changes
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadCategories();
+    void loadCategories();
   }, [loadCategories]);
 
   // Sync sortedCategories with categories when not dragging
@@ -400,7 +402,11 @@ export function BacklogView({
       setNewCategoryName('');
       setIsCreatingCategory(false);
     } catch (error) {
-      console.error('Failed to create category:', error);
+      logger.error(error instanceof Error ? error : new Error('Failed to create category'), {
+        context: 'BacklogView.handleCreateCategory',
+        boardId,
+        categoryName: newCategoryName,
+      });
     }
   };
 
@@ -415,7 +421,11 @@ export function BacklogView({
       setEditingCategoryId(null);
       setEditingCategoryName('');
     } catch (error) {
-      console.error('Failed to rename category:', error);
+      logger.error(error instanceof Error ? error : new Error('Failed to rename category'), {
+        context: 'BacklogView.handleRenameCategory',
+        categoryId,
+        newName: editingCategoryName,
+      });
     }
   };
 
@@ -431,7 +441,10 @@ export function BacklogView({
       setCategories(categories.filter(c => c.id !== deleteCategoryId));
       setDeleteCategoryId(null);
     } catch (error) {
-      console.error('Failed to delete category:', error);
+      logger.error(error instanceof Error ? error : new Error('Failed to delete category'), {
+        context: 'BacklogView.confirmDeleteCategory',
+        categoryId: deleteCategoryId,
+      });
       setDeleteCategoryId(null);
     }
   };
@@ -485,7 +498,7 @@ export function BacklogView({
             value={newCategoryName}
             onChange={e => setNewCategoryName(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter') handleCreateCategory();
+              if (e.key === 'Enter') void handleCreateCategory();
               if (e.key === 'Escape') {
                 setIsCreatingCategory(false);
                 setNewCategoryName('');
@@ -496,7 +509,7 @@ export function BacklogView({
           />
           <div className="flex items-center gap-2 mt-3">
             <button
-              onClick={handleCreateCategory}
+              onClick={() => void handleCreateCategory()}
               className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
             >
               Create
@@ -554,13 +567,8 @@ export function BacklogView({
           setTasksByCategory(current => move(current, event));
         }, [])}
         onDragEnd={useCallback<DragDropEventHandlers['onDragEnd']>(
-          async event => {
-            console.log('=== BACKLOG DRAG END CALLED ===');
-            console.log('Event:', event);
-            console.log('Canceled:', event.canceled);
-
+          event => {
             if (event.canceled) {
-              console.log('Drag was canceled, reverting');
               setTasksByCategory(snapshot.current);
               isDragging.current = false;
               return;
@@ -568,27 +576,23 @@ export function BacklogView({
 
             // After successful drag, update backend
             const { source, target } = event.operation;
-            console.log('Source:', source);
-            console.log('Source.id:', source?.id);
-            console.log('Source.type:', source?.type);
-            console.log('Source.data:', source?.data);
-            console.log('Target:', target);
-            console.log('Target.id:', target?.id);
-            console.log('Target.type:', target?.type);
-            console.log('Target.data:', target?.data);
-
-            console.log('Checking source type:', source?.type);
 
             // Handle category reordering
             if (source && target && source.type === 'category') {
-              console.log('=== CATEGORY REORDERING ===');
-
               // Update all category positions based on sorted state from onDragOver
               sortedCategories.forEach((category, index) => {
-                console.log('Updating category:', category.id, 'to position:', index);
                 backlogCategoryApi.update(category.id, { position: index }).catch(error => {
-                  console.error('Failed to update category position:', error);
-                  loadCategories();
+                  logger.error(
+                    error instanceof Error
+                      ? error
+                      : new Error('Failed to update category position'),
+                    {
+                      context: 'BacklogView.onDragEnd.categoryReorder',
+                      categoryId: category.id,
+                      position: index,
+                    }
+                  );
+                  void loadCategories();
                 });
               });
 
@@ -606,8 +610,6 @@ export function BacklogView({
 
             // Handle task reordering
             if (source && target && source.type === 'task') {
-              console.log('=== TASK REORDERING ===');
-
               // After move() in onDragOver, tasksByCategory already has the new positions
               // Only send updates for tasks that actually changed
               const updates: Array<{ id: string; updates: Partial<Task> }> = [];
@@ -636,9 +638,7 @@ export function BacklogView({
               });
 
               // Execute backend updates
-              console.log('Backlog drag end - updates to send:', updates);
               updates.forEach(({ id, updates: taskUpdates }) => {
-                console.log('Updating task:', id, taskUpdates);
                 onUpdateTask(id, taskUpdates);
               });
             }
@@ -668,7 +668,7 @@ export function BacklogView({
                   setEditingCategoryName(name);
                 }}
                 onEditChange={setEditingCategoryName}
-                onEditEnd={handleRenameCategory}
+                onEditEnd={id => void handleRenameCategory(id)}
                 onDelete={handleDeleteCategory}
                 onCreateTask={handleCreateTaskInCategory}
                 onTaskClick={setSelectedTask}
@@ -736,7 +736,7 @@ export function BacklogView({
         confirmLabel="Delete"
         cancelLabel="Cancel"
         isDangerous={true}
-        onConfirm={confirmDeleteCategory}
+        onConfirm={() => void confirmDeleteCategory()}
         onCancel={() => setDeleteCategoryId(null)}
       />
     </div>

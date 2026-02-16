@@ -4,14 +4,11 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Board, Task, TaskStatus } from '@/types';
 import { boardApi, taskApi } from '@/lib/api';
-import { BoardView } from '@/components/BoardView';
-import { BacklogView } from '@/components/BacklogView';
-import { ArchiveView } from '@/components/ArchiveView';
-import { Header } from '@/components/Header';
-import { Sidebar } from '@/components/Sidebar';
-import { CreateBoardModal } from '@/components/CreateBoardModal';
-import { EditBoardModal } from '@/components/EditBoardModal';
-import { TaskModal } from '@/components/TaskModal';
+import { BoardView } from '@/features/views/components/BoardView';
+import { BacklogView } from '@/features/views/components/BacklogView';
+import { ArchiveView } from '@/features/views/components/ArchiveView';
+import { Header, Sidebar, CreateBoardModal, EditBoardModal, TaskModal } from '@/shared/components';
+import { logger } from '@/shared/utils/logger';
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -94,8 +91,11 @@ function HomeContent() {
       await loadBoards();
       router.push(`/?board=${board.id}&view=board`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create board');
-      console.error(err);
+      const error = err instanceof Error ? err : new Error('Failed to create board');
+      setError(error.message);
+      logger.error(error, {
+        context: 'HomePage.handleCreateBoard',
+      });
     }
   };
 

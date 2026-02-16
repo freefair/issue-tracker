@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Task, TaskStatus } from '@/types';
-import { TaskCardView } from './TaskCardView';
-import { TaskModal } from './TaskModal';
+import { TaskCardView } from '../TaskCardView';
+import { TaskModal } from '@/shared/components';
 
 interface ArchiveViewProps {
   tasks: Task[];

@@ -7,7 +7,7 @@ import { DragDropProvider } from '@dnd-kit/react';
 import type { DragDropEventHandlers } from '@dnd-kit/react';
 import { defaultPreset, PointerSensor, KeyboardSensor } from '@dnd-kit/dom';
 import { move } from '@dnd-kit/helpers';
-import { TaskModal } from './TaskModal';
+import { TaskModal } from '@/shared/components';
 
 interface BoardViewProps {
   board: Board;
@@ -33,11 +33,6 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
   );
   const snapshot = useRef<Record<TaskStatus, Task[]>>({} as Record<TaskStatus, Task[]>);
   const isDragging = useRef(false);
-
-  // Version check - remove this after confirming it works
-  useEffect(() => {
-    console.log('BoardView loaded - version 3.0 with new @dnd-kit/react API');
-  }, []);
 
   // Organize tasks by status for drag & drop
   useEffect(() => {
@@ -107,8 +102,6 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
       const { source } = event.operation;
       if (!source) return;
 
-      console.log('Drag ended:', { sourceId: source.id });
-
       // Simplified approach: iterate current state (after move() updated it) and save positions
       // Only send updates for tasks that actually changed to avoid clearing backlogCategoryId
       const updates: Array<{ id: string; updates: Partial<Task> }> = [];
@@ -142,9 +135,7 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
       });
 
       // Execute all updates
-      console.log('Board updates to send:', updates);
       updates.forEach(({ id, updates: taskUpdates }) => {
-        console.log('Updating task:', id, taskUpdates);
         onUpdateTask(id, taskUpdates);
       });
 
