@@ -4,11 +4,16 @@
 
 FROM eclipse-temurin:21-jre-alpine AS runtime
 
+# Build arguments
+ARG VERSION=0.0.1-SNAPSHOT
+ARG JAR_FILE=backend/build/libs/*.jar
+
 # Add metadata
 LABEL org.opencontainers.image.title="Issue Tracker"
 LABEL org.opencontainers.image.description="Modern issue tracking application with Kanban boards"
 LABEL org.opencontainers.image.vendor="TFSolution"
 LABEL org.opencontainers.image.source="https://github.com/tf-tech/issue-tracker"
+LABEL org.opencontainers.image.version="${VERSION}"
 
 # Create app user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
@@ -17,7 +22,6 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 WORKDIR /app
 
 # Copy the JAR file
-ARG JAR_FILE=backend/build/libs/*.jar
 COPY ${JAR_FILE} app.jar
 
 # Change ownership to app user

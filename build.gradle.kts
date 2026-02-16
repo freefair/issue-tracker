@@ -8,7 +8,7 @@ plugins {
 
 allprojects {
     group = "com.issuetracker"
-    version = "0.0.1-SNAPSHOT"
+    version = project.findProperty("version") as String? ?: "0.0.1-SNAPSHOT"
 }
 
 subprojects {

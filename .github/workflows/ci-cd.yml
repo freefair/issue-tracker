@@ -134,7 +134,6 @@ jobs:
             type=ref,event=branch
             type=sha,prefix={{branch}}-
             type=raw,value=snapshot,enable={{is_default_branch}}
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
