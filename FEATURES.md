@@ -8,7 +8,7 @@ A modern, full-stack issue tracking application built with Kotlin Spring Boot (b
 
 ### Backend
 - **Framework:** Spring Boot 3.x with Kotlin
-- **Database:** H2 (in-memory, development) / PostgreSQL-compatible
+- **Database:** PostgreSQL (required)
 - **Data Access:** Spring Data R2DBC (reactive, non-blocking)
 - **Migration:** Flyway for database versioning
 - **API Style:** RESTful with reactive streams (Kotlin Flow)
@@ -60,10 +60,11 @@ A modern, full-stack issue tracking application built with Kotlin Spring Boot (b
 - **Quick Actions:** Move tasks from Backlog to To Do with one click
 
 #### Archive View
-- **Auto-Archive:** Tasks completed >7 days ago automatically archived
+- **Filtered View:** Shows tasks that have been in DONE status for >7 days
 - **Search:** Filter archived tasks by title, description, or tags
-- **Restore:** Move archived tasks back to active columns
+- **Restore:** Move tasks back to active columns by changing status
 - **Clean History:** Keep active boards focused on current work
+- **Note:** Archive is a view filter, not a separate storage - tasks remain in DONE status
 
 **View Persistence:**
 - Active view stored in URL (`?view=board|backlog|archive`)
@@ -190,34 +191,51 @@ A modern, full-stack issue tracking application built with Kotlin Spring Boot (b
 - Simplified layouts for small screens
 
 **Touch Support:**
-- Long-press to activate drag (250ms)
+- Touch-optimized drag & drop via @dnd-kit
 - Smooth touch scrolling
-- Tap to select, double-tap to open
-- Touch-friendly button sizes
+- Tap to select and open tasks
+- Touch-friendly button sizes (minimum 44x44px)
 
 ---
 
 ### 8. Dark Mode
 
-**Features:**
-- System preference detection
-- Manual toggle (if implemented)
-- Consistent color scheme across all views
-- Proper contrast ratios for accessibility
-- Smooth transitions between modes
+**Status:** Prepared but not currently active
 
-**Color Palette:**
-- Light: White, grays, accent blues/purples
-- Dark: Dark grays, muted colors, high contrast text
+**Implementation:**
+- Tailwind `dark:` classes throughout codebase
+- Ready for activation via `class="dark"` on `<html>` tag
+- Consistent color scheme defined for all views
+- Proper contrast ratios for accessibility
+
+**To Enable:**
+- Add system preference detection
+- Add manual toggle switch
+- Apply `dark` class to root element based on preference
 
 ---
 
-### 9. Real-Time Updates
+### 9. Optimistic UI Updates
 
 **Current Implementation:**
-- Optimistic UI updates (instant feedback)
-- Re-fetch after mutations for consistency
-- Debounced search to reduce load
+- Immediate local state update on user action
+- Backend update in background
+- Revert only on error (no re-fetch on success)
+- Debounced search to reduce load (300ms)
+
+**Pattern:**
+```typescript
+// Update state immediately
+setTasks(prevTasks => /* optimistic update */);
+
+// Send to backend
+try {
+  await taskApi.update(taskId, updates);
+} catch (err) {
+  // Only reload on error
+  loadTasks(boardId);
+}
+```
 
 **Future Enhancements:**
 - WebSocket/SSE for live multi-user updates
@@ -395,19 +413,21 @@ A modern, full-stack issue tracking application built with Kotlin Spring Boot (b
 - Health check endpoint (if implemented)
 
 ### Production Considerations
-- Switch H2 → PostgreSQL
-- Enable authentication
-- Configure CORS
-- Set up logging (structured JSON)
-- Monitor with APM tools
+- Configure PostgreSQL with secure credentials
+- Enable authentication & authorization
+- Set `CORS_ALLOWED_ORIGINS` environment variable
+- Set up structured logging (JSON format)
+- Monitor with APM tools (e.g., Prometheus, Grafana)
+- Regular database backups
 
 ---
 
 ## Future Roadmap
 
 ### Planned Features
+- [ ] Dark mode toggle (UI classes already prepared)
 - [ ] User authentication & multi-tenancy
-- [ ] Real-time collaboration (WebSockets)
+- [ ] Real-time collaboration (WebSockets/SSE)
 - [ ] File attachments on tasks
 - [ ] Comments & activity log
 - [ ] Email notifications

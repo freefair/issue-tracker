@@ -722,7 +722,7 @@
     "schemas": {
       "BoardResponse": {
         "type": "object",
-        "required": ["id", "name", "createdAt", "updatedAt"],
+        "required": ["id", "name", "createdAt"],
         "properties": {
           "id": {
             "type": "string",
@@ -735,13 +735,10 @@
           "description": {
             "type": "string",
             "nullable": true,
+            "maxLength": 2000,
             "example": "Main development board for Project Alpha"
           },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
             "type": "string",
             "format": "date-time"
           }
@@ -760,6 +757,7 @@
           "description": {
             "type": "string",
             "nullable": true,
+            "maxLength": 2000,
             "example": "Main development board"
           }
         }
@@ -775,7 +773,8 @@
           },
           "description": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "maxLength": 2000
           }
         }
       },
@@ -841,6 +840,7 @@
           },
           "description": {
             "type": "string",
+            "maxLength": 10000,
             "example": "Add JWT-based authentication"
           },
           "status": {
@@ -873,7 +873,8 @@
             "maxLength": 500
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 10000
           },
           "status": {
             "$ref": "#/components/schemas/TaskStatus"
@@ -946,7 +947,7 @@
       },
       "CreateBacklogCategoryRequest": {
         "type": "object",
-        "required": ["name", "position"],
+        "required": ["name"],
         "properties": {
           "name": {
             "type": "string",
@@ -957,6 +958,7 @@
           "position": {
             "type": "integer",
             "minimum": 0,
+            "default": 0,
             "example": 0
           }
         }
