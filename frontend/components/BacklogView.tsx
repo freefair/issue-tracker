@@ -331,6 +331,9 @@ export function BacklogView({
   const snapshot = useRef<Record<string, Task[]>>({});
   const isDragging = useRef(false);
 
+  // Local state for category sorting (for visual feedback during drag)
+  const [sortedCategories, setSortedCategories] = useState<BacklogCategory[]>([]);
+
   // Load categories function
   const loadCategories = useCallback(async () => {
     try {
@@ -346,6 +349,13 @@ export function BacklogView({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadCategories();
   }, [loadCategories]);
+
+  // Sync sortedCategories with categories when not dragging
+  useEffect(() => {
+    if (isDragging.current) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSortedCategories(categories);
+  }, [categories]);
 
   // Organize tasks by category whenever tasks or categories change
   useEffect(() => {
@@ -513,10 +523,30 @@ export function BacklogView({
           snapshot.current = JSON.parse(JSON.stringify(tasksByCategory));
         }, [tasksByCategory])}
         onDragOver={useCallback<DragDropEventHandlers['onDragOver']>(event => {
-          const { source } = event.operation;
+          const { source, target } = event.operation;
 
-          // Don't handle category reordering here (categories have their own logic)
+          // Handle category reordering
           if (source && source.type === 'category') {
+            setSortedCategories(current => {
+              const sourceIndex = current.findIndex(c => c.id === source.id);
+              if (sourceIndex === -1) return current;
+
+              // Find target index
+              let targetIndex = current.length - 1;
+              if (target && target.id) {
+                const foundIndex = current.findIndex(c => c.id === target.id);
+                if (foundIndex !== -1) {
+                  targetIndex = foundIndex;
+                }
+              }
+
+              // Reorder array
+              const result = [...current];
+              const [moved] = result.splice(sourceIndex, 1);
+              result.splice(targetIndex, 0, moved);
+
+              return result;
+            });
             return;
           }
 
@@ -553,15 +583,17 @@ export function BacklogView({
             if (source && target && source.type === 'category') {
               console.log('=== CATEGORY REORDERING ===');
 
-              // Categories should already be reordered by onDragOver
-              // Just update all category positions based on current state
-              categories.forEach((category, index) => {
+              // Update all category positions based on sorted state from onDragOver
+              sortedCategories.forEach((category, index) => {
                 console.log('Updating category:', category.id, 'to position:', index);
                 backlogCategoryApi.update(category.id, { position: index }).catch(error => {
                   console.error('Failed to update category position:', error);
                   loadCategories();
                 });
               });
+
+              // Update main categories state to match sorted order
+              setCategories(sortedCategories);
 
               // Reset dragging flag
               const DRAG_END_DELAY_MS = 500;
@@ -577,14 +609,22 @@ export function BacklogView({
               console.log('=== TASK REORDERING ===');
 
               // After move() in onDragOver, tasksByCategory already has the new positions
-              // Just iterate through all categories and update all tasks with their current positions
+              // Only send updates for tasks that actually changed
               const updates: Array<{ id: string; updates: Partial<Task> }> = [];
 
               Object.entries(tasksByCategory).forEach(([categoryKey, tasks]) => {
                 const categoryId = categoryKey === 'uncategorized' ? null : categoryKey;
 
                 tasks.forEach((task, index) => {
-                  // Always update position and category to match current state
+                  const positionChanged = task.position !== index;
+                  const categoryChanged = task.backlogCategoryId !== categoryId;
+
+                  // Skip if nothing changed
+                  if (!positionChanged && !categoryChanged) {
+                    return;
+                  }
+
+                  // Always include both position and category when something changed
                   updates.push({
                     id: task.id,
                     updates: {
@@ -609,11 +649,11 @@ export function BacklogView({
               isDragging.current = false;
             }, DRAG_END_DELAY_MS);
           },
-          [tasksByCategory, onUpdateTask, categories, loadCategories]
+          [tasksByCategory, onUpdateTask, sortedCategories, loadCategories]
         )}
       >
         <div className="space-y-4">
-          {categories.map((category, index) => {
+          {sortedCategories.map((category, index) => {
             const categoryTasks = tasksByCategory[category.id] || [];
             return (
               <SortableCategory

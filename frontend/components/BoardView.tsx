@@ -104,96 +104,42 @@ export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: B
         return;
       }
 
-      const { source, target } = event.operation;
-      if (!source || !target) return;
+      const { source } = event.operation;
+      if (!source) return;
 
-      console.log('Drag ended:', { sourceId: source.id, targetId: target.id });
+      console.log('Drag ended:', { sourceId: source.id });
 
-      // Find the dragged task in current state
-      const allTasks = Object.values(tasksByStatus).flat();
-      const movedTask = allTasks.find(t => t.id === source.id);
-      if (!movedTask) {
-        console.log('Moved task not found');
-        return;
-      }
-
-      // Determine target status
-      let targetStatus: TaskStatus;
-      const validStatuses = [
-        TaskStatus.BACKLOG,
-        TaskStatus.TODO,
-        TaskStatus.IN_PROGRESS,
-        TaskStatus.READY_FOR_DEPLOYMENT,
-        TaskStatus.DONE,
-      ];
-
-      if (validStatuses.includes(target.id as TaskStatus)) {
-        targetStatus = target.id as TaskStatus;
-      } else {
-        // Dropped on a task - find its status
-        const targetTask = allTasks.find(t => t.id === target.id);
-        if (!targetTask) {
-          console.log('Target task not found');
-          return;
-        }
-        targetStatus = targetTask.status;
-      }
-
-      console.log('Target status:', targetStatus);
-
-      // Build updates list
+      // Simplified approach: iterate current state (after move() updated it) and save positions
+      // Only send updates for tasks that actually changed to avoid clearing backlogCategoryId
       const updates: Array<{ id: string; updates: Partial<Task> }> = [];
-      const statusChanged = movedTask.status !== targetStatus;
 
-      if (statusChanged) {
-        // Moving between columns - reindex BOTH columns
-        // 1. Reindex source column (without moved task)
-        const sourceColumnTasks = tasksByStatus[movedTask.status] || [];
-        sourceColumnTasks
-          .filter(t => t.id !== movedTask.id)
-          .forEach((task, index) => {
-            updates.push({
-              id: task.id,
-              updates: { position: index },
-            });
-          });
+      Object.entries(tasksByStatus).forEach(([status, tasks]) => {
+        tasks.forEach((task, index) => {
+          const statusAsEnum = status as TaskStatus;
+          const positionChanged = task.position !== index;
+          const statusChanged = task.status !== statusAsEnum;
 
-        // 2. Insert moved task into target and reindex all
-        const targetColumnTasks = tasksByStatus[targetStatus] || [];
-        const targetTask = allTasks.find(t => t.id === target.id);
-        let insertIndex = targetColumnTasks.length;
-
-        if (targetTask && targetTask.status === targetStatus) {
-          insertIndex = targetColumnTasks.findIndex(t => t.id === targetTask.id);
-        }
-
-        const targetWithInserted = [...targetColumnTasks];
-        targetWithInserted.splice(insertIndex, 0, movedTask);
-
-        targetWithInserted.forEach((task, index) => {
-          if (task.id === movedTask.id) {
-            // Update BOTH position AND status
-            updates.push({
-              id: task.id,
-              updates: { position: index, status: targetStatus },
-            });
-          } else {
-            updates.push({
-              id: task.id,
-              updates: { position: index },
-            });
+          // Skip if nothing changed
+          if (!positionChanged && !statusChanged) {
+            return;
           }
-        });
-      } else {
-        // Moving within same column - reindex all
-        const columnTasks = tasksByStatus[targetStatus] || [];
-        columnTasks.forEach((task, index) => {
+
+          const taskUpdates: Partial<Task> = {
+            position: index,
+            backlogCategoryId: task.backlogCategoryId, // Always preserve this
+          };
+
+          // Only include status if it changed
+          if (statusChanged) {
+            taskUpdates.status = statusAsEnum;
+          }
+
           updates.push({
             id: task.id,
-            updates: { position: index },
+            updates: taskUpdates,
           });
         });
-      }
+      });
 
       // Execute all updates
       console.log('Board updates to send:', updates);
