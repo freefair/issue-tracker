@@ -104,6 +104,74 @@ interface SortableCategoryProps {
   onTaskDelete: (taskId: string) => void;
 }
 
+interface UncategorizedContainerProps {
+  tasks: Task[];
+  onCreateTask: () => void;
+  onTaskClick: (task: Task) => void;
+  onTaskUpdate: (taskId: string, updates: Partial<Task>) => void;
+  onTaskDelete: (taskId: string) => void;
+}
+
+const UncategorizedContainer = memo(function UncategorizedContainer({
+  tasks,
+  onCreateTask,
+  onTaskClick,
+  onTaskUpdate,
+  onTaskDelete,
+}: PropsWithChildren<UncategorizedContainerProps>) {
+  const { ref } = useSortable({
+    id: 'uncategorized',
+    accept: 'task',
+    collisionPriority: CollisionPriority.Low,
+    type: 'uncategorized',
+    index: 9999, // Always last
+    data: { type: 'uncategorized', group: 'uncategorized' },
+  });
+
+  return (
+    <div
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ref={ref as any}
+      className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Uncategorized</h3>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
+          </span>
+          <button
+            onClick={onCreateTask}
+            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+          >
+            + Task
+          </button>
+        </div>
+      </div>
+
+      <div id="uncategorized" className="space-y-3 min-h-[100px]">
+        {tasks.length > 0 ? (
+          tasks.map((task, taskIndex) => (
+            <SortableTask
+              key={task.id}
+              task={task}
+              categoryId={null}
+              index={taskIndex}
+              onTaskClick={onTaskClick}
+              onTaskUpdate={onTaskUpdate}
+              onTaskDelete={onTaskDelete}
+            />
+          ))
+        ) : (
+          <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
+            No uncategorized tasks. Click &quot;+ Task&quot; to create one.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+});
+
 const SortableCategory = memo(function SortableCategory({
   category,
   tasks,
@@ -126,7 +194,7 @@ const SortableCategory = memo(function SortableCategory({
     collisionPriority: CollisionPriority.Low,
     type: 'category',
     index,
-    data: { type: 'category' },
+    data: { type: 'category', group: category.id },
   });
 
   return (
@@ -261,6 +329,7 @@ export function BacklogView({
   // Organize tasks by category (including uncategorized)
   const [tasksByCategory, setTasksByCategory] = useState<Record<string, Task[]>>({});
   const snapshot = useRef<Record<string, Task[]>>({});
+  const isDragging = useRef(false);
 
   // Load categories function
   const loadCategories = useCallback(async () => {
@@ -280,6 +349,11 @@ export function BacklogView({
 
   // Organize tasks by category whenever tasks or categories change
   useEffect(() => {
+    // Skip if currently dragging to avoid overwriting optimistic updates
+    if (isDragging.current) {
+      return;
+    }
+
     const backlogTasks = tasks
       .filter(task => task.status === TaskStatus.BACKLOG)
       .sort((a, b) => a.position - b.position);
@@ -435,6 +509,7 @@ export function BacklogView({
         plugins={defaultPreset.plugins}
         sensors={sensors}
         onDragStart={useCallback<DragDropEventHandlers['onDragStart']>(() => {
+          isDragging.current = true;
           snapshot.current = JSON.parse(JSON.stringify(tasksByCategory));
         }, [tasksByCategory])}
         onDragOver={useCallback<DragDropEventHandlers['onDragOver']>(event => {
@@ -450,160 +525,89 @@ export function BacklogView({
         }, [])}
         onDragEnd={useCallback<DragDropEventHandlers['onDragEnd']>(
           async event => {
+            console.log('=== BACKLOG DRAG END CALLED ===');
+            console.log('Event:', event);
+            console.log('Canceled:', event.canceled);
+
             if (event.canceled) {
+              console.log('Drag was canceled, reverting');
               setTasksByCategory(snapshot.current);
+              isDragging.current = false;
               return;
             }
 
             // After successful drag, update backend
             const { source, target } = event.operation;
+            console.log('Source:', source);
+            console.log('Source.id:', source?.id);
+            console.log('Source.type:', source?.type);
+            console.log('Source.data:', source?.data);
+            console.log('Target:', target);
+            console.log('Target.id:', target?.id);
+            console.log('Target.type:', target?.type);
+            console.log('Target.data:', target?.data);
+
+            console.log('Checking source type:', source?.type);
 
             // Handle category reordering
             if (source && target && source.type === 'category') {
-              const sourceCategoryId = String(source.id);
-              const targetCategoryId = String(target.id);
+              console.log('=== CATEGORY REORDERING ===');
 
-              if (sourceCategoryId === targetCategoryId) return;
-
-              // Find current positions
-              const sourceIndex = categories.findIndex(c => c.id === sourceCategoryId);
-              const targetIndex = categories.findIndex(c => c.id === targetCategoryId);
-
-              if (sourceIndex === -1 || targetIndex === -1) return;
-
-              // Reorder categories
-              const reordered = [...categories];
-              const [movedCategory] = reordered.splice(sourceIndex, 1);
-              reordered.splice(targetIndex, 0, movedCategory);
-
-              // Update local state immediately
-              setCategories(reordered);
-
-              // Update positions in backend
-              (async () => {
-                try {
-                  for (let i = 0; i < reordered.length; i++) {
-                    const category = reordered[i];
-                    if (category.position !== i) {
-                      await backlogCategoryApi.update(category.id, { position: i });
-                    }
-                  }
-                } catch (error) {
-                  console.error('Failed to update category positions:', error);
-                  // Reload categories on error
+              // Categories should already be reordered by onDragOver
+              // Just update all category positions based on current state
+              categories.forEach((category, index) => {
+                console.log('Updating category:', category.id, 'to position:', index);
+                backlogCategoryApi.update(category.id, { position: index }).catch(error => {
+                  console.error('Failed to update category position:', error);
                   loadCategories();
-                }
-              })();
+                });
+              });
+
+              // Reset dragging flag
+              const DRAG_END_DELAY_MS = 500;
+              setTimeout(() => {
+                isDragging.current = false;
+              }, DRAG_END_DELAY_MS);
 
               return;
             }
 
             // Handle task reordering
             if (source && target && source.type === 'task') {
-              // Get source and target groups from the drag data
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const sourceGroup = (source.data as any)?.group;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const targetGroup = (target.data as any)?.group || String(target.id);
+              console.log('=== TASK REORDERING ===');
 
-              // Find the dragged task
-              const allTasks = Object.values(tasksByCategory).flat();
-              const movedTask = allTasks.find(t => t.id === source.id);
-              if (!movedTask) return;
-
-              // Determine target category ID (undefined for uncategorized)
-              const targetCategoryId = targetGroup === 'uncategorized' ? undefined : targetGroup;
-
-              // Check if category changed
-              const categoryChanged = sourceGroup !== targetGroup;
-
-              // Get tasks in source and target categories from CURRENT state
-              const tasksInSourceCategory = tasksByCategory[sourceGroup] || [];
-              const tasksInTargetCategory = tasksByCategory[targetGroup] || [];
-
-              // Find insert index
-              const targetTask = allTasks.find(t => t.id === target.id);
-              let insertIndex: number;
-              if (targetTask) {
-                // Dropped on a task - insert before it
-                insertIndex = tasksInTargetCategory.findIndex(t => t.id === targetTask.id);
-              } else {
-                // Dropped on category container - append at end
-                insertIndex = tasksInTargetCategory.length;
-              }
-
-              // Build update list
+              // After move() in onDragOver, tasksByCategory already has the new positions
+              // Just iterate through all categories and update all tasks with their current positions
               const updates: Array<{ id: string; updates: Partial<Task> }> = [];
 
-              if (categoryChanged) {
-                // Moving between categories
-                // 1. Reindex source category (without moved task)
-                tasksInSourceCategory
-                  .filter(t => t.id !== movedTask.id)
-                  .forEach((task, index) => {
-                    updates.push({
-                      id: task.id,
-                      updates: { position: index },
-                    });
-                  });
+              Object.entries(tasksByCategory).forEach(([categoryKey, tasks]) => {
+                const categoryId = categoryKey === 'uncategorized' ? null : categoryKey;
 
-                // 2. Insert moved task into target category and reindex all
-                const targetWithInserted = [...tasksInTargetCategory];
-                targetWithInserted.splice(insertIndex, 0, movedTask);
-
-                targetWithInserted.forEach((task, index) => {
-                  if (task.id === movedTask.id) {
-                    // Update BOTH position AND category for moved task
-                    updates.push({
-                      id: task.id,
-                      updates: {
-                        position: index,
-                        backlogCategoryId: targetCategoryId,
-                      },
-                    });
-                  } else {
-                    // Update position for other tasks
-                    updates.push({
-                      id: task.id,
-                      updates: { position: index },
-                    });
-                  }
-                });
-              } else {
-                // Moving within same category
-                const currentIndex = tasksInTargetCategory.findIndex(t => t.id === movedTask.id);
-                if (currentIndex === -1) return;
-
-                if (currentIndex === insertIndex) return; // No change
-
-                // Reorder and reindex
-                const reordered = [...tasksInTargetCategory];
-                const [removed] = reordered.splice(currentIndex, 1);
-                reordered.splice(insertIndex, 0, removed);
-
-                reordered.forEach((task, index) => {
+                tasks.forEach((task, index) => {
+                  // Always update position and category to match current state
                   updates.push({
                     id: task.id,
-                    updates: { position: index },
+                    updates: {
+                      position: index,
+                      backlogCategoryId: categoryId,
+                    },
                   });
                 });
-              }
+              });
 
               // Execute backend updates
-              // No optimistic UI update here - let parent's optimistic update handle it
               console.log('Backlog drag end - updates to send:', updates);
-              (async () => {
-                try {
-                  for (const { id, updates: taskUpdates } of updates) {
-                    console.log('Updating task:', id, taskUpdates);
-                    await onUpdateTask(id, taskUpdates);
-                  }
-                  console.log('All updates completed');
-                } catch (error) {
-                  console.error('Failed to update task positions:', error);
-                }
-              })();
+              updates.forEach(({ id, updates: taskUpdates }) => {
+                console.log('Updating task:', id, taskUpdates);
+                onUpdateTask(id, taskUpdates);
+              });
             }
+
+            // Reset dragging flag after a short delay to allow updates to process
+            const DRAG_END_DELAY_MS = 500;
+            setTimeout(() => {
+              isDragging.current = false;
+            }, DRAG_END_DELAY_MS);
           },
           [tasksByCategory, onUpdateTask, categories, loadCategories]
         )}
@@ -635,43 +639,13 @@ export function BacklogView({
           })}
 
           {/* Uncategorized Tasks */}
-          <div className="bg-white/50 dark:bg-gray-800/50 rounded-2xl p-6 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                Uncategorized
-              </h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {uncategorizedTasks.length} {uncategorizedTasks.length === 1 ? 'task' : 'tasks'}
-                </span>
-                <button
-                  onClick={() => handleCreateTaskInCategory(undefined)}
-                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
-                >
-                  + Task
-                </button>
-              </div>
-            </div>
-            {uncategorizedTasks.length > 0 ? (
-              <div id="uncategorized" className="space-y-3">
-                {uncategorizedTasks.map((task, taskIndex) => (
-                  <SortableTask
-                    key={task.id}
-                    task={task}
-                    categoryId={null}
-                    index={taskIndex}
-                    onTaskClick={setSelectedTask}
-                    onTaskUpdate={onUpdateTask}
-                    onTaskDelete={onDeleteTask}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
-                No uncategorized tasks. Click &quot;+ Task&quot; to create one.
-              </p>
-            )}
-          </div>
+          <UncategorizedContainer
+            tasks={uncategorizedTasks}
+            onCreateTask={() => handleCreateTaskInCategory(undefined)}
+            onTaskClick={setSelectedTask}
+            onTaskUpdate={onUpdateTask}
+            onTaskDelete={onDeleteTask}
+          />
         </div>
       </DragDropProvider>
 
@@ -685,15 +659,25 @@ export function BacklogView({
         </div>
       )}
 
-      {selectedTask && (
-        <TaskModal
-          task={selectedTask}
-          isOpen={true}
-          onClose={() => setSelectedTask(null)}
-          onUpdate={onUpdateTask}
-          onDelete={onDeleteTask}
-        />
-      )}
+      {selectedTask &&
+        (() => {
+          // Find the current version of the selected task
+          const currentTask = tasks.find(t => t.id === selectedTask.id);
+          if (!currentTask) {
+            // Task was deleted, close modal
+            setSelectedTask(null);
+            return null;
+          }
+          return (
+            <TaskModal
+              task={currentTask}
+              isOpen={true}
+              onClose={() => setSelectedTask(null)}
+              onUpdate={onUpdateTask}
+              onDelete={onDeleteTask}
+            />
+          );
+        })()}
 
       <CreateTaskModal
         isOpen={isCreateModalOpen}

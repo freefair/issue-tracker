@@ -24,7 +24,7 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
   const [tags, setTags] = useState<string[]>(task.tags);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  // Update internal state when task ID changes (new task selected)
+  // Update internal state when task changes (ID change or content update)
   // This is an intentional sync from props to state
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -32,7 +32,7 @@ export function TaskModal({ task, isOpen, onClose, onUpdate, onDelete }: TaskMod
     setDescription(task.description);
     setTags(task.tags);
     setIsEditing(false);
-  }, [task.id, task.title, task.description, task.tags]);
+  }, [task.id, task.title, task.description, task.tags, task.updatedAt]);
 
   if (!isOpen) return null;
 

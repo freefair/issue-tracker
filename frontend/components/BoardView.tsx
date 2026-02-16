@@ -1,21 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Board, Task, TaskStatus } from '@/types';
 import { Column } from './Column';
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverlay,
-  DragStartEvent,
-  PointerSensor,
-  TouchSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  closestCorners,
-} from '@dnd-kit/core';
-import { TaskCardView } from './TaskCardView';
+import { DragDropProvider } from '@dnd-kit/react';
+import type { DragDropEventHandlers } from '@dnd-kit/react';
+import { defaultPreset, PointerSensor, KeyboardSensor } from '@dnd-kit/dom';
+import { move } from '@dnd-kit/helpers';
 import { TaskModal } from './TaskModal';
 
 interface BoardViewProps {
@@ -33,252 +24,240 @@ const COLUMNS = [
   { status: TaskStatus.DONE, title: 'Done', color: 'green' },
 ];
 
+const sensors = [PointerSensor, KeyboardSensor];
+
 export function BoardView({ tasks, onCreateTask, onUpdateTask, onDeleteTask }: BoardViewProps) {
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [tasksByStatus, setTasksByStatus] = useState<Record<TaskStatus, Task[]>>(
+    {} as Record<TaskStatus, Task[]>
+  );
+  const snapshot = useRef<Record<TaskStatus, Task[]>>({} as Record<TaskStatus, Task[]>);
+  const isDragging = useRef(false);
 
   // Version check - remove this after confirming it works
   useEffect(() => {
-    console.log('BoardView loaded - version 2.0 with READY_FOR_DEPLOYMENT fix');
+    console.log('BoardView loaded - version 3.0 with new @dnd-kit/react API');
   }, []);
 
-  // Note: selectedTask syncing removed - parent re-renders with updated task
+  // Organize tasks by status for drag & drop
+  useEffect(() => {
+    // Skip if currently dragging to avoid overwriting optimistic updates
+    if (isDragging.current) {
+      return;
+    }
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Prevent accidental drags
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250, // Long-press on mobile
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor)
-  );
-
-  const getTasksByStatus = (status: TaskStatus) => {
     const ARCHIVE_THRESHOLD_DAYS = 7;
     const archiveThresholdDate = new Date();
     archiveThresholdDate.setDate(archiveThresholdDate.getDate() - ARCHIVE_THRESHOLD_DAYS);
 
-    return tasks
-      .filter(task => {
-        if (task.status !== status) return false;
+    const organized: Record<TaskStatus, Task[]> = {
+      [TaskStatus.BACKLOG]: [],
+      [TaskStatus.TODO]: [],
+      [TaskStatus.IN_PROGRESS]: [],
+      [TaskStatus.READY_FOR_DEPLOYMENT]: [],
+      [TaskStatus.DONE]: [],
+    };
 
-        // Hide Done tasks older than 7 days
-        if (status === TaskStatus.DONE) {
-          const taskDate = new Date(task.updatedAt);
-          return taskDate >= archiveThresholdDate;
+    tasks.forEach(task => {
+      // Hide Done tasks older than 7 days
+      if (task.status === TaskStatus.DONE) {
+        const taskDate = new Date(task.updatedAt);
+        if (taskDate < archiveThresholdDate) {
+          return;
         }
-
-        return true;
-      })
-      .sort((a, b) => a.position - b.position);
-  };
-
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    const task = tasks.find(t => t.id === active.id);
-    setActiveTask(task || null);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveTask(null);
-
-    console.log('Drag ended:', { activeId: active.id, overId: over?.id });
-
-    if (!over) {
-      console.log('No drop target');
-      return;
-    }
-
-    const activeTask = tasks.find(t => t.id === active.id);
-    if (!activeTask) {
-      console.log('Active task not found');
-      return;
-    }
-
-    // Determine the new status
-    let newStatus: TaskStatus;
-    let targetTask: Task | undefined;
-
-    // Check if over.id is a TaskStatus enum value
-    const validStatuses = [
-      TaskStatus.BACKLOG,
-      TaskStatus.TODO,
-      TaskStatus.IN_PROGRESS,
-      TaskStatus.READY_FOR_DEPLOYMENT,
-      TaskStatus.DONE,
-    ];
-    console.log('Checking if over.id is valid status:', { overId: over.id, validStatuses });
-
-    if (validStatuses.includes(over.id as TaskStatus)) {
-      // Dropped on column
-      newStatus = over.id as TaskStatus;
-      console.log('Dropped on column:', newStatus);
-    } else {
-      // Dropped on another task - get that task's status
-      targetTask = tasks.find(t => t.id === over.id);
-      if (!targetTask) {
-        console.log('Target task not found');
-        return;
       }
-      newStatus = targetTask.status;
-      console.log('Dropped on task, using task status:', newStatus);
-    }
-
-    // Get all tasks in the target column (excluding the dragged task)
-    const tasksInColumn = tasks
-      .filter(t => t.status === newStatus && t.id !== active.id)
-      .sort((a, b) => a.position - b.position);
-
-    // Calculate new position
-    let newPosition: number;
-
-    if (targetTask && targetTask.status === newStatus) {
-      // Dropped on another task in the same or different column
-      // Insert before the target task
-      newPosition = targetTask.position;
-    } else {
-      // Dropped on empty column or at the end
-      newPosition =
-        tasksInColumn.length > 0 ? Math.max(...tasksInColumn.map(t => t.position)) + 1 : 0;
-    }
-
-    // Check if anything changed
-    const statusChanged = activeTask.status !== newStatus;
-    const positionChanged = activeTask.position !== newPosition;
-
-    if (!statusChanged && !positionChanged) {
-      console.log('Nothing changed, skipping update');
-      return;
-    }
-
-    console.log('Updating task:', {
-      taskId: activeTask.id,
-      oldStatus: activeTask.status,
-      newStatus,
-      oldPosition: activeTask.position,
-      newPosition,
-      statusChanged,
-      positionChanged,
+      organized[task.status].push(task);
     });
 
-    // Rebuild positions for affected columns to avoid negative values
-    const updates: Array<{ id: string; updates: Partial<Task> }> = [];
+    // Sort by position
+    Object.values(TaskStatus).forEach(status => {
+      organized[status].sort((a, b) => a.position - b.position);
+    });
 
-    if (activeTask.status === newStatus) {
-      // Moving within same column - recalculate ALL positions in column
-      const allTasksInColumn = tasks
-        .filter(t => t.status === newStatus)
-        .sort((a, b) => a.position - b.position);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTasksByStatus(organized);
+  }, [tasks]);
 
-      // Remove the moved task and insert at new position
-      const filteredTasks = allTasksInColumn.filter(t => t.id !== activeTask.id);
-      filteredTasks.splice(newPosition, 0, activeTask);
+  const handleDragStart = useCallback<DragDropEventHandlers['onDragStart']>(
+    _event => {
+      isDragging.current = true;
+      // Snapshot current state
+      snapshot.current = JSON.parse(JSON.stringify(tasksByStatus));
+    },
+    [tasksByStatus]
+  );
 
-      // Assign new positions starting from 0
-      filteredTasks.forEach((task, index) => {
-        if (task.position !== index) {
-          updates.push({
-            id: task.id,
-            updates: {
-              position: index,
-              ...(task.id === activeTask.id && { status: newStatus }),
-            },
-          });
+  const handleDragOver = useCallback<DragDropEventHandlers['onDragOver']>(event => {
+    const { source } = event.operation;
+
+    // Only handle task movements
+    if (source && source.type === 'task') {
+      setTasksByStatus(current => move(current, event));
+    }
+  }, []);
+
+  const handleDragEnd = useCallback<DragDropEventHandlers['onDragEnd']>(
+    event => {
+      if (event.canceled) {
+        setTasksByStatus(snapshot.current);
+        isDragging.current = false;
+        return;
+      }
+
+      const { source, target } = event.operation;
+      if (!source || !target) return;
+
+      console.log('Drag ended:', { sourceId: source.id, targetId: target.id });
+
+      // Find the dragged task in current state
+      const allTasks = Object.values(tasksByStatus).flat();
+      const movedTask = allTasks.find(t => t.id === source.id);
+      if (!movedTask) {
+        console.log('Moved task not found');
+        return;
+      }
+
+      // Determine target status
+      let targetStatus: TaskStatus;
+      const validStatuses = [
+        TaskStatus.BACKLOG,
+        TaskStatus.TODO,
+        TaskStatus.IN_PROGRESS,
+        TaskStatus.READY_FOR_DEPLOYMENT,
+        TaskStatus.DONE,
+      ];
+
+      if (validStatuses.includes(target.id as TaskStatus)) {
+        targetStatus = target.id as TaskStatus;
+      } else {
+        // Dropped on a task - find its status
+        const targetTask = allTasks.find(t => t.id === target.id);
+        if (!targetTask) {
+          console.log('Target task not found');
+          return;
         }
-      });
-    } else {
-      // Moving to different column - recalculate positions in BOTH columns
-      // 1. Recalculate old column (close gap)
-      tasks
-        .filter(t => t.status === activeTask.status && t.id !== activeTask.id)
-        .sort((a, b) => a.position - b.position)
-        .forEach((task, index) => {
-          if (task.position !== index) {
+        targetStatus = targetTask.status;
+      }
+
+      console.log('Target status:', targetStatus);
+
+      // Build updates list
+      const updates: Array<{ id: string; updates: Partial<Task> }> = [];
+      const statusChanged = movedTask.status !== targetStatus;
+
+      if (statusChanged) {
+        // Moving between columns - reindex BOTH columns
+        // 1. Reindex source column (without moved task)
+        const sourceColumnTasks = tasksByStatus[movedTask.status] || [];
+        sourceColumnTasks
+          .filter(t => t.id !== movedTask.id)
+          .forEach((task, index) => {
+            updates.push({
+              id: task.id,
+              updates: { position: index },
+            });
+          });
+
+        // 2. Insert moved task into target and reindex all
+        const targetColumnTasks = tasksByStatus[targetStatus] || [];
+        const targetTask = allTasks.find(t => t.id === target.id);
+        let insertIndex = targetColumnTasks.length;
+
+        if (targetTask && targetTask.status === targetStatus) {
+          insertIndex = targetColumnTasks.findIndex(t => t.id === targetTask.id);
+        }
+
+        const targetWithInserted = [...targetColumnTasks];
+        targetWithInserted.splice(insertIndex, 0, movedTask);
+
+        targetWithInserted.forEach((task, index) => {
+          if (task.id === movedTask.id) {
+            // Update BOTH position AND status
+            updates.push({
+              id: task.id,
+              updates: { position: index, status: targetStatus },
+            });
+          } else {
             updates.push({
               id: task.id,
               updates: { position: index },
             });
           }
         });
-
-      // 2. Recalculate new column (with moved task inserted)
-      const tasksInNewColumn = tasks
-        .filter(t => t.status === newStatus)
-        .sort((a, b) => a.position - b.position);
-
-      tasksInNewColumn.splice(newPosition, 0, activeTask);
-      tasksInNewColumn.forEach((task, index) => {
-        updates.push({
-          id: task.id,
-          updates: {
-            position: index,
-            ...(task.id === activeTask.id && { status: newStatus }),
-          },
+      } else {
+        // Moving within same column - reindex all
+        const columnTasks = tasksByStatus[targetStatus] || [];
+        columnTasks.forEach((task, index) => {
+          updates.push({
+            id: task.id,
+            updates: { position: index },
+          });
         });
+      }
+
+      // Execute all updates
+      console.log('Board updates to send:', updates);
+      updates.forEach(({ id, updates: taskUpdates }) => {
+        console.log('Updating task:', id, taskUpdates);
+        onUpdateTask(id, taskUpdates);
       });
-    }
 
-    // Execute all updates
-    console.log('Updating positions:', updates);
-    updates.forEach(({ id, updates: taskUpdates }) => {
-      onUpdateTask(id, taskUpdates);
-    });
-  };
-
-  const handleDragCancel = () => {
-    setActiveTask(null);
-  };
+      // Reset dragging flag after a short delay to allow updates to process
+      const DRAG_END_DELAY_MS = 100;
+      setTimeout(() => {
+        isDragging.current = false;
+      }, DRAG_END_DELAY_MS);
+    },
+    [tasksByStatus, onUpdateTask]
+  );
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-          {COLUMNS.map(column => (
-            <Column
-              key={column.status}
-              title={column.title}
-              status={column.status}
-              color={column.color}
-              tasks={getTasksByStatus(column.status)}
-              onCreateTask={onCreateTask}
-              onUpdateTask={onUpdateTask}
-              onDeleteTask={onDeleteTask}
-              onTaskClick={setSelectedTask}
-            />
-          ))}
-        </div>
-      </div>
-
-      <DragOverlay>
-        {activeTask ? (
-          <div className="rotate-3">
-            <TaskCardView task={activeTask} isDragging={true} />
+    <>
+      <DragDropProvider
+        plugins={defaultPreset.plugins}
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+            {COLUMNS.map(column => (
+              <Column
+                key={column.status}
+                title={column.title}
+                status={column.status}
+                color={column.color}
+                tasks={tasksByStatus[column.status] || []}
+                onCreateTask={onCreateTask}
+                onUpdateTask={onUpdateTask}
+                onDeleteTask={onDeleteTask}
+                onTaskClick={setSelectedTask}
+              />
+            ))}
           </div>
-        ) : null}
-      </DragOverlay>
+        </div>
+      </DragDropProvider>
 
-      {selectedTask && (
-        <TaskModal
-          task={selectedTask}
-          isOpen={true}
-          onClose={() => setSelectedTask(null)}
-          onUpdate={onUpdateTask}
-          onDelete={onDeleteTask}
-        />
-      )}
-    </DndContext>
+      {selectedTask &&
+        (() => {
+          // Find the current version of the selected task
+          const currentTask = tasks.find(t => t.id === selectedTask.id);
+          if (!currentTask) {
+            // Task was deleted, close modal
+            setSelectedTask(null);
+            return null;
+          }
+          return (
+            <TaskModal
+              task={currentTask}
+              isOpen={true}
+              onClose={() => setSelectedTask(null)}
+              onUpdate={onUpdateTask}
+              onDelete={onDeleteTask}
+            />
+          );
+        })()}
+    </>
   );
 }

@@ -16,8 +16,21 @@ export function TagInput({ boardId, tags, onChange, placeholder = 'Add tags...' 
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Update dropdown position when showing
+  useEffect(() => {
+    if (showSuggestions && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [showSuggestions]);
 
   // Fetch tag suggestions from backend
   useEffect(() => {
@@ -143,9 +156,16 @@ export function TagInput({ boardId, tags, onChange, placeholder = 'Add tags...' 
         />
       </div>
 
-      {/* Autocomplete suggestions */}
+      {/* Autocomplete suggestions - using fixed positioning to escape overflow */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+        <div
+          className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-y-auto"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            width: `${dropdownPosition.width}px`,
+          }}
+        >
           {suggestions.map((suggestion, index) => (
             <button
               key={suggestion}

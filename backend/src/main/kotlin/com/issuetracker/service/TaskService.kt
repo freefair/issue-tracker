@@ -76,7 +76,8 @@ class TaskService(
             status = request.status ?: existingTask.status,
             position = request.position ?: existingTask.position,
             tags = request.tags?.joinToString(",") ?: existingTask.tags,
-            backlogCategoryId = request.backlogCategoryId ?: existingTask.backlogCategoryId,
+            // Allow backlogCategoryId to be set to null when position is being updated (drag & drop)
+            backlogCategoryId = if (request.position != null) request.backlogCategoryId else (request.backlogCategoryId ?: existingTask.backlogCategoryId),
             updatedAt = Instant.now()
         )
 

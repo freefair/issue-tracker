@@ -13,7 +13,7 @@ export interface Task {
   status: TaskStatus;
   position: number;
   tags: string[];
-  backlogCategoryId?: string;
+  backlogCategoryId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,7 +42,7 @@ export interface UpdateTaskRequest {
   status?: TaskStatus;
   position?: number;
   tags?: string[];
-  backlogCategoryId?: string;
+  backlogCategoryId?: string | null;
 }
 
 export interface BacklogCategory {

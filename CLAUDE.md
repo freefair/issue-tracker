@@ -287,11 +287,13 @@ issue-tracker/
   - Global: `/api/tasks/search/global?q={query}`
 
 ### Drag & Drop Architecture (@dnd-kit)
-- **Mixed API Usage:**
-  - `BacklogView`: Uses new @dnd-kit/react API (DragDropProvider, useSortable from @dnd-kit/react/sortable)
-  - `BoardView`: Uses old @dnd-kit/sortable API (DndContext, SortableContext)
+- **Unified API Usage (NEW @dnd-kit/react):**
+  - All views now use the **new @dnd-kit/react API** for consistency
+  - `BacklogView`: DragDropProvider with useSortable for categories and tasks
+  - `BoardView`: DragDropProvider with useSortable for columns and tasks
+  - `Column`: useSortable for droppable columns with nested SortableTask components
   - `TaskCardView`: Pure presentation component (no drag logic)
-  - `TaskCard`: Wrapper using old API for BoardView compatibility
+  - **No legacy @dnd-kit/core or @dnd-kit/sortable** - all migrated to @dnd-kit/react
 
 - **Optimistic Updates Pattern:**
   ```typescript
@@ -436,7 +438,7 @@ sleep 8 && curl -s http://localhost:8080/api/boards | jq
 - ⚠️ **Debounce searches** to avoid excessive API calls
 
 ### Drag & Drop (@dnd-kit)
-- ⚠️ **API Mixing** - BacklogView uses @dnd-kit/react (new), BoardView uses @dnd-kit/sortable (old)
+- ✅ **Unified API** - All components now use @dnd-kit/react (no more API mixing)
 - ⚠️ **Target Group** - Get targetGroup from `target.data.group`, NOT from `targetTask.backlogCategoryId`
 - ⚠️ **Moved Task Updates** - ALWAYS update BOTH position AND backlogCategoryId for moved tasks
 - ⚠️ **Position Recalculation** - Recalculate ALL positions from 0, never use relative adjustments (position - 1)

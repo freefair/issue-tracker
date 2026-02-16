@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Task, TaskStatus } from '@/types';
-import { TaskCard } from './TaskCard';
+import { TaskCardView } from './TaskCardView';
 import { TaskModal } from './TaskModal';
 
 interface ArchiveViewProps {
@@ -85,10 +85,9 @@ export function ArchiveView({ tasks, onUpdateTask, onDeleteTask }: ArchiveViewPr
           {filteredTasks.map(task => (
             <div key={task.id} className="flex items-start gap-3">
               <div className="flex-1">
-                <TaskCard
+                <TaskCardView
                   task={task}
-                  onUpdate={onUpdateTask}
-                  onDelete={onDeleteTask}
+                  isDragging={false}
                   onClick={() => setSelectedTask(task)}
                 />
               </div>
