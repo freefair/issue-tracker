@@ -462,7 +462,12 @@ sleep 8 && curl -s http://localhost:8080/api/boards | jq
 ## Feature Flags / Configuration
 
 ### Environment Variables
+
+**Frontend:**
 - `NEXT_PUBLIC_API_URL` - API base URL (default: http://localhost:8080/api)
+
+**Backend:**
+- `CORS_ALLOWED_ORIGINS` - **CRITICAL** - Comma-separated list of allowed origins for CORS (e.g., `https://yourdomain.com,https://www.yourdomain.com`). Required for production deployment under a specific URL.
 - Database connection configured in `application.properties`
 
 ### Build Modes
@@ -498,11 +503,11 @@ sleep 8 && curl -s http://localhost:8080/api/boards | jq
 - No authentication (development mode)
 - Input validation via Jakarta Bean Validation
 - XSS prevention via React auto-escaping
-- No CORS configuration (same-origin)
+- CORS configuration via `CORS_ALLOWED_ORIGINS` environment variable
 
 ### Production Requirements
 - Add JWT authentication
-- Configure CORS properly
+- Configure CORS properly (set `CORS_ALLOWED_ORIGINS` to production domains)
 - Add rate limiting
 - Enable HTTPS
 - Sanitize all inputs
