@@ -46,24 +46,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install frontend dependencies
-        working-directory: ./frontend
-        run: npm ci
-
-      - name: Build frontend
-        working-directory: ./frontend
-        run: npm run build
-
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build backend with version
-        run: ./gradlew clean build -Pversion=${{ steps.version.outputs.version }} -x test
+      - name: Build application with version
+        run: ./gradlew :backend:build -Pversion=${{ steps.version.outputs.version }} -x test
 
       - name: Rename JAR with version
         run: |
           cd backend/build/libs
-          mv *.jar issue-tracker-${{ steps.version.outputs.version }}.jar
+          # JAR is named backend-{version}.jar from Gradle
+          mv backend-${{ steps.version.outputs.version }}.jar issue-tracker-${{ steps.version.outputs.version }}.jar
           ls -lh
 
       - name: Upload JAR to Release
